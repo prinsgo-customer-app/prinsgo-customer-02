@@ -17,14 +17,26 @@ export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const [mode, setMode] = useState('ride');
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState(null);
   const [checkingActive, setCheckingActive] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Location permission denied. Enable it in phone Settings to book rides.');
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
         setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      } catch (err) {
+        setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
+      } finally {
+        setLocationLoading(false);
       }
     })();
     checkActiveTrips();
@@ -49,7 +61,36 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const retryLocation = async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Location permission denied. Enable it in phone Settings to book rides.');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+    } catch (err) {
+      setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const requireLocation = () => {
+    if (currentLocation) return true;
+    Alert.alert(
+      'Still getting your location',
+      locationError || 'Please wait a moment for GPS to lock, then try again.',
+      locationError ? [{ text: 'Retry', onPress: retryLocation }, { text: 'Cancel', style: 'cancel' }] : undefined
+    );
+    return false;
+  };
+
   const handleQuickAddress = (label) => {
+    if (!requireLocation()) return;
     const saved = user?.savedAddresses?.find((a) => a.label === label);
     if (!saved) {
       Alert.alert(
@@ -109,11 +150,23 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {locationLoading ? (
+        <View style={styles.locationBanner}>
+          <ActivityIndicator size="small" color="#1877F2" />
+          <Text style={styles.locationBannerText}>Getting your location…</Text>
+        </View>
+      ) : locationError ? (
+        <TouchableOpacity style={styles.locationBannerError} onPress={retryLocation}>
+          <Text style={styles.locationBannerErrorText}>⚠️ {locationError} Tap to retry.</Text>
+        </TouchableOpacity>
+      ) : null}
+
       <TouchableOpacity
         style={styles.searchBox}
-        onPress={() =>
-          navigation.navigate('PlaceSearch', { mode, currentLocation, field: 'drop' })
-        }
+        onPress={() => {
+          if (!requireLocation()) return;
+          navigation.navigate('PlaceSearch', { mode, currentLocation, field: 'drop' });
+        }}
       >
         <Text style={styles.searchBoxText}>
           Where {mode === 'ride' ? 'to' : "are you sending"}?
@@ -173,6 +226,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   searchBoxText: { color: '#555', fontSize: 15 },
+  locationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    gap: 8,
+  },
+  locationBannerText: { color: '#888', fontSize: 13 },
+  locationBannerError: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 10,
+  },
+  locationBannerErrorText: { color: '#B25000', fontSize: 12 },
   quickRow: { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 10 },
   quickItem: { alignItems: 'center' },
   quickIcon: { fontSize: 24, marginBottom: 4 },
