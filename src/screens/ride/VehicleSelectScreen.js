@@ -29,6 +29,12 @@ export default function VehicleSelectScreen({ route, navigation }) {
   }, []);
 
   const loadEstimate = async () => {
+    if (!pickup?.lat || !drop?.lat) {
+      Alert.alert('Missing location', 'Pickup or drop location is missing. Please go back and try again.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+      return;
+    }
     try {
       const res = await estimateFare(pickup.lat, pickup.lng, drop.lat, drop.lng);
       setEstimates(res.data.estimates || []);
