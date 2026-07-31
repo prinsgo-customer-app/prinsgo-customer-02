@@ -12,6 +12,9 @@ import VehicleSelectScreen from '../screens/ride/VehicleSelectScreen';
 import LiveRideScreen from '../screens/ride/LiveRideScreen';
 import RateRideScreen from '../screens/ride/RateRideScreen';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
+import WalletScreen from '../screens/WalletScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,10 +38,10 @@ function MainStack() {
       {/* Phase 2 screens */}
       <Stack.Screen name="ParcelDetails" component={ComingSoonScreen} initialParams={{ title: 'Parcel booking' }} />
       <Stack.Screen name="LiveParcel" component={ComingSoonScreen} initialParams={{ title: 'Parcel tracking' }} />
-      <Stack.Screen name="Profile" component={ComingSoonScreen} initialParams={{ title: 'Profile' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="SavedPlaces" component={ComingSoonScreen} initialParams={{ title: 'Saved places' }} />
-      <Stack.Screen name="History" component={ComingSoonScreen} initialParams={{ title: 'Booking history' }} />
-      <Stack.Screen name="Wallet" component={ComingSoonScreen} initialParams={{ title: 'Wallet' }} />
+      <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
     </Stack.Navigator>
   );
 }
