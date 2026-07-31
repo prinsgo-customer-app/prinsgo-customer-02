@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
@@ -45,6 +46,32 @@ export default function HomeScreen({ navigation }) {
       // no active trip or network issue - ignore
     } finally {
       setCheckingActive(false);
+    }
+  };
+
+  const handleQuickAddress = (label) => {
+    const saved = user?.savedAddresses?.find((a) => a.label === label);
+    if (!saved) {
+      Alert.alert(
+        `No ${label} address saved`,
+        `Add your ${label} address in Profile first, then it'll show up here.`,
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Go to Profile', onPress: () => navigation.navigate('Profile') },
+        ]
+      );
+      return;
+    }
+    if (mode === 'ride') {
+      navigation.navigate('VehicleSelect', {
+        pickup: currentLocation,
+        drop: { address: saved.address, lat: saved.lat, lng: saved.lng },
+      });
+    } else {
+      navigation.navigate('ParcelDetails', {
+        pickup: currentLocation,
+        drop: { address: saved.address, lat: saved.lat, lng: saved.lng },
+      });
     }
   };
 
@@ -94,11 +121,11 @@ export default function HomeScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.quickRow}>
-        <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('SavedPlaces')}>
+        <TouchableOpacity style={styles.quickItem} onPress={() => handleQuickAddress('home')}>
           <Text style={styles.quickIcon}>🏠</Text>
           <Text style={styles.quickLabel}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('SavedPlaces')}>
+        <TouchableOpacity style={styles.quickItem} onPress={() => handleQuickAddress('work')}>
           <Text style={styles.quickIcon}>💼</Text>
           <Text style={styles.quickLabel}>Work</Text>
         </TouchableOpacity>
