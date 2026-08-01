@@ -7,7 +7,6 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import { getRideById, cancelRide } from '../../api/rides';
 import { joinRideRoom, onDriverLocation } from '../../api/socket';
 
