@@ -85,47 +85,26 @@ export default function LiveRideScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: Number(ride?.pickup?.lat || 18.5204),
-          longitude: Number(ride?.pickup?.lng || 73.8567),
-          latitudeDelta: 0.03,
-          longitudeDelta: 0.03,
-        }}
-      >
-        {ride?.pickup && (
-          <Marker
-            coordinate={{
-              latitude: Number(ride.pickup.lat),
-              longitude: Number(ride.pickup.lng),
-            }}
-            title="Pickup"
-          />
-        )}
+<View
+  style={{
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  }}
+>
+  <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
+    Live Ride
+  </Text>
 
-        {ride?.drop && (
-          <Marker
-            coordinate={{
-              latitude: Number(ride.drop.lat),
-              longitude: Number(ride.drop.lng),
-            }}
-            title="Drop"
-            pinColor="green"
-          />
-        )}
+  <Text style={{ marginTop: 20 }}>
+    Ride ID: {ride?._id}
+  </Text>
 
-        {driverLocation && (
-          <Marker
-            coordinate={{
-              latitude: Number(driverLocation.lat),
-              longitude: Number(driverLocation.lng),
-            }}
-            title="Driver"
-            pinColor="blue"
-          />
-        )}
-      </MapView>
+  <Text style={{ marginTop: 10 }}>
+    Status: {ride?.status}
+  </Text>
+</View>>
 
       <View style={styles.sheet}>
         <Text style={styles.status}>
