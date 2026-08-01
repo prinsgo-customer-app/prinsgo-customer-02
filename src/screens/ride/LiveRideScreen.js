@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { getRideById, cancelRide } from '../../api/rides';
 import { joinRideRoom, onDriverLocation } from '../../api/socket';
 
@@ -84,26 +85,47 @@ export default function LiveRideScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-<View
-  style={{
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  }}
->
-  <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
-    Live Ride
-  </Text>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: Number(ride?.pickup?.lat || 18.5204),
+          longitude: Number(ride?.pickup?.lng || 73.8567),
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
+        }}
+      >
+        {ride?.pickup && (
+          <Marker
+            coordinate={{
+              latitude: Number(ride.pickup.lat),
+              longitude: Number(ride.pickup.lng),
+            }}
+            title="Pickup"
+          />
+        )}
 
-  <Text style={{ marginTop: 20 }}>
-    Ride ID: {ride?._id}
-  </Text>
+        {ride?.drop && (
+          <Marker
+            coordinate={{
+              latitude: Number(ride.drop.lat),
+              longitude: Number(ride.drop.lng),
+            }}
+            title="Drop"
+            pinColor="green"
+          />
+        )}
 
-  <Text style={{ marginTop: 10 }}>
-    Status: {ride?.status}
-  </Text>
-</View>>
+        {driverLocation && (
+          <Marker
+            coordinate={{
+              latitude: Number(driverLocation.lat),
+              longitude: Number(driverLocation.lng),
+            }}
+            title="Driver"
+            pinColor="blue"
+          />
+        )}
+      </MapView>
 
       <View style={styles.sheet}>
         <Text style={styles.status}>
