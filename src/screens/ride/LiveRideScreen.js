@@ -21,56 +21,70 @@ const STATUS_LABELS = {
 };
 
 export default function LiveRideScreen({ route, navigation }) {
-  const { rideId } = route.params;
+  const { rideId } = route.params || {};
 
   const [ride, setRide] = useState(null);
   const [driverLocation, setDriverLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchRide = useCallback(async () => {
+    if (!rideId) return;
     try {
       const res = await getRideById(rideId);
+      const fetchedRide = res?.data?.ride;
 
-      console.log("Ride Data =>", JSON.stringify(res.data.ride, null, 2));
-
-      setRide(res.data.ride);
-
-      if (res.data.ride.status === 'completed') {
-        navigation.replace('RateRide', { rideId });
+      if (fetchedRide) {
+        setRide(fetchedRide);
+        if (fetchedRide.status === 'completed') {
+          navigation.replace('RateRide', { rideId });
+        }
       }
     } catch (err) {
-      console.log(err);
+      console.log("LiveRide Fetch Error:", err);
     } finally {
       setLoading(false);
     }
-  }, [rideId]);
+  }, [rideId, navigation]);
 
   useEffect(() => {
     fetchRide();
 
-    joinRideRoom(rideId);
+    if (rideId) {
+      try {
+        joinRideRoom(rideId);
+      } catch (e) {
+        console.log("Socket Join Error:", e);
+      }
+    }
 
-    const unsubscribe = onDriverLocation((location) => {
-      if (!location) return;
-
-      setDriverLocation({
-        lat: Number(location.lat),
-        lng: Number(location.lng),
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onDriverLocation((location) => {
+        // Sirf valid location aane par hi update karein warna Map crash hoga
+        if (location?.lat && location?.lng) {
+          setDriverLocation({
+            lat: Number(location.lat),
+            lng: Number(location.lng),
+          });
+        }
       });
-    });
+    } catch (e) {
+      console.log("Socket Location Error:", e);
+    }
 
     const timer = setInterval(fetchRide, 5000);
 
     return () => {
       clearInterval(timer);
-      unsubscribe();
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, []);
+  }, [fetchRide, rideId]);
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#1877F2" />
+        <Text style={{ marginTop: 12, color: '#666' }}>Fetching ride details...</Text>
       </View>
     );
   }
@@ -78,23 +92,30 @@ export default function LiveRideScreen({ route, navigation }) {
   if (!ride) {
     return (
       <View style={styles.center}>
-        <Text>No Ride Found</Text>
+        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>No Ride Found</Text>
+        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => navigation.replace('Home')}>
+          <Text style={{ color: '#1877F2', fontWeight: 'bold' }}>Go Back Home</Text>
+        </TouchableOpacity>
       </View>
     );
   }
+
+  // Fallback coordinates taaki Map kabhi crash na ho
+  const safeLat = Number(ride?.pickup?.lat) || 18.5204;
+  const safeLng = Number(ride?.pickup?.lng) || 73.8567;
 
   return (
     <View style={styles.container}>
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: Number(ride?.pickup?.lat || 18.5204),
-          longitude: Number(ride?.pickup?.lng || 73.8567),
+          latitude: safeLat,
+          longitude: safeLng,
           latitudeDelta: 0.03,
           longitudeDelta: 0.03,
         }}
       >
-        {ride?.pickup && (
+        {ride?.pickup?.lat && ride?.pickup?.lng && (
           <Marker
             coordinate={{
               latitude: Number(ride.pickup.lat),
@@ -104,7 +125,7 @@ export default function LiveRideScreen({ route, navigation }) {
           />
         )}
 
-        {ride?.drop && (
+        {ride?.drop?.lat && ride?.drop?.lng && (
           <Marker
             coordinate={{
               latitude: Number(ride.drop.lat),
@@ -115,7 +136,7 @@ export default function LiveRideScreen({ route, navigation }) {
           />
         )}
 
-        {driverLocation && (
+        {driverLocation?.lat && driverLocation?.lng && (
           <Marker
             coordinate={{
               latitude: Number(driverLocation.lat),
@@ -129,33 +150,36 @@ export default function LiveRideScreen({ route, navigation }) {
 
       <View style={styles.sheet}>
         <Text style={styles.status}>
-          {STATUS_LABELS[ride.status] || ride.status}
+          {STATUS_LABELS[ride?.status] || ride?.status || 'Processing...'}
         </Text>
 
-        {ride.driver && (
+        {/* 🚨 CRASH FIX: Checking properly if driver object exists */}
+        {ride?.driver && typeof ride.driver === 'object' ? (
           <>
             <Text style={styles.driverName}>
-              {ride.driver.name || 'Driver'}
+              {ride.driver?.name || 'Driver Assigned'}
             </Text>
-
             <Text style={styles.driverInfo}>
-              {ride.driver.vehicleNumber || '-'}
+              {ride.driver?.vehicleNumber || 'Vehicle details pending'}
             </Text>
-
             <Text style={styles.driverInfo}>
-              ⭐ {ride.driver.rating ? Number(ride.driver.rating).toFixed(1) : "0.0"}
+              ⭐ {ride.driver?.rating ? Number(ride.driver.rating).toFixed(1) : "5.0"}
             </Text>
           </>
-        )}
+        ) : ride?.status === 'requested' ? (
+          <Text style={styles.driverInfo}>Looking for nearby drivers...</Text>
+        ) : null}
 
-        {ride.startOtp &&
-          ['accepted', 'driver_arrived'].includes(ride.status) && (
+        {/* OTP Dikhane ka Sahi Logic */}
+        {ride?.startOtp ? (
+          ['accepted', 'driver_arrived'].includes(ride?.status) && (
             <Text style={styles.otp}>
-              OTP : {ride.startOtp}
+              OTP : {String(ride.startOtp)}
             </Text>
-          )}
+          )
+        ) : null}
 
-        {['requested', 'accepted'].includes(ride.status) && (
+        {['requested', 'accepted'].includes(ride?.status) && (
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => {
@@ -168,14 +192,10 @@ export default function LiveRideScreen({ route, navigation }) {
                     text: "Yes",
                     onPress: async () => {
                       try {
-                        await cancelRide(
-                          rideId,
-                          "Cancelled by customer"
-                        );
-
+                        await cancelRide(rideId, "Cancelled by customer");
                         navigation.replace("Home");
                       } catch (e) {
-                        Alert.alert("Error", e.message);
+                        Alert.alert("Error", e?.response?.data?.message || e.message);
                       }
                     },
                   },
@@ -192,62 +212,14 @@ export default function LiveRideScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  map: {
-    flex: 1,
-  },
-
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  sheet: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-
-  status: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-
-  driverName: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 5,
-  },
-
-  driverInfo: {
-    color: '#666',
-    marginBottom: 3,
-  },
-
-  otp: {
-    marginTop: 15,
-    fontSize: 22,
-    color: '#1877F2',
-    fontWeight: '700',
-  },
-
-  cancelButton: {
-    marginTop: 20,
-    backgroundColor: '#E53935',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-
-  cancelText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+  container: { flex: 1 },
+  map: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  sheet: { backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5 },
+  status: { fontSize: 18, fontWeight: '700', marginBottom: 12, color: '#0A0F24' },
+  driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: '#0A0F24' },
+  driverInfo: { color: '#666', marginBottom: 4, fontSize: 14 },
+  otp: { marginTop: 10, fontSize: 24, color: '#1877F2', fontWeight: '800', letterSpacing: 2 },
+  cancelButton: { marginTop: 20, backgroundColor: '#E53935', padding: 15, borderRadius: 10, alignItems: 'center' },
+  cancelText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });
