@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { getRideById, cancelRide } from '../../api/rides';
 import { joinRideRoom, onDriverLocation } from '../../api/socket';
@@ -15,6 +22,7 @@ const STATUS_LABELS = {
 
 export default function LiveRideScreen({ route, navigation }) {
   const { rideId } = route.params;
+
   const [ride, setRide] = useState(null);
   const [driverLocation, setDriverLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,12 +30,16 @@ export default function LiveRideScreen({ route, navigation }) {
   const fetchRide = useCallback(async () => {
     try {
       const res = await getRideById(rideId);
+
+      console.log("Ride Data =>", JSON.stringify(res.data.ride, null, 2));
+
       setRide(res.data.ride);
+
       if (res.data.ride.status === 'completed') {
         navigation.replace('RateRide', { rideId });
       }
     } catch (err) {
-      // ignore transient errors
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -35,38 +47,38 @@ export default function LiveRideScreen({ route, navigation }) {
 
   useEffect(() => {
     fetchRide();
+
     joinRideRoom(rideId);
-    const unsubscribe = onDriverLocation(({ lat, lng }) => setDriverLocation({ lat, lng }));
 
-    const poll = setInterval(fetchRide, 6000);
+    const unsubscribe = onDriverLocation((location) => {
+      if (!location) return;
+
+      setDriverLocation({
+        lat: Number(location.lat),
+        lng: Number(location.lng),
+      });
+    });
+
+    const timer = setInterval(fetchRide, 5000);
+
     return () => {
+      clearInterval(timer);
       unsubscribe();
-      clearInterval(poll);
     };
-  }, [rideId]);
+  }, []);
 
-  const handleCancel = () => {
-    Alert.alert('Cancel ride?', 'Are you sure you want to cancel this ride?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, cancel',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await cancelRide(rideId, 'Cancelled by customer');
-            navigation.replace('Home');
-          } catch (err) {
-            Alert.alert('Error', err.message);
-          }
-        },
-      },
-    ]);
-  };
-
-  if (loading || !ride) {
+  if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#1877F2" />
+      </View>
+    );
+  }
+
+  if (!ride) {
+    return (
+      <View style={styles.center}>
+        <Text>No Ride Found</Text>
       </View>
     );
   }
@@ -76,21 +88,39 @@ export default function LiveRideScreen({ route, navigation }) {
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: ride.pickup.lat,
-          longitude: ride.pickup.lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitude: Number(ride?.pickup?.lat || 18.5204),
+          longitude: Number(ride?.pickup?.lng || 73.8567),
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
         }}
       >
-        <Marker coordinate={{ latitude: ride.pickup.lat, longitude: ride.pickup.lng }} title="Pickup" />
-        <Marker
-          coordinate={{ latitude: ride.drop.lat, longitude: ride.drop.lng }}
-          title="Drop"
-          pinColor="green"
-        />
+        {ride?.pickup && (
+          <Marker
+            coordinate={{
+              latitude: Number(ride.pickup.lat),
+              longitude: Number(ride.pickup.lng),
+            }}
+            title="Pickup"
+          />
+        )}
+
+        {ride?.drop && (
+          <Marker
+            coordinate={{
+              latitude: Number(ride.drop.lat),
+              longitude: Number(ride.drop.lng),
+            }}
+            title="Drop"
+            pinColor="green"
+          />
+        )}
+
         {driverLocation && (
           <Marker
-            coordinate={{ latitude: driverLocation.lat, longitude: driverLocation.lng }}
+            coordinate={{
+              latitude: Number(driverLocation.lat),
+              longitude: Number(driverLocation.lng),
+            }}
             title="Driver"
             pinColor="blue"
           />
@@ -98,24 +128,62 @@ export default function LiveRideScreen({ route, navigation }) {
       </MapView>
 
       <View style={styles.sheet}>
-        <Text style={styles.status}>{STATUS_LABELS[ride.status] || ride.status}</Text>
+        <Text style={styles.status}>
+          {STATUS_LABELS[ride.status] || ride.status}
+        </Text>
 
         {ride.driver && (
-          <View style={styles.driverRow}>
-            <Text style={styles.driverName}>{ride.driver.name}</Text>
-            <Text style={styles.driverMeta}>
-              {ride.driver.vehicleNumber} • ⭐ {ride.driver.rating?.toFixed(1) || '—'}
+          <>
+            <Text style={styles.driverName}>
+              {ride.driver.name || 'Driver'}
             </Text>
-          </View>
+
+            <Text style={styles.driverInfo}>
+              {ride.driver.vehicleNumber || '-'}
+            </Text>
+
+            <Text style={styles.driverInfo}>
+              ⭐ {ride.driver.rating ? Number(ride.driver.rating).toFixed(1) : "0.0"}
+            </Text>
+          </>
         )}
 
-        {ride.startOtp && ['accepted', 'driver_arrived'].includes(ride.status) && (
-          <Text style={styles.otp}>Share OTP with driver: {ride.startOtp}</Text>
-        )}
+        {ride.startOtp &&
+          ['accepted', 'driver_arrived'].includes(ride.status) && (
+            <Text style={styles.otp}>
+              OTP : {ride.startOtp}
+            </Text>
+          )}
 
         {['requested', 'accepted'].includes(ride.status) && (
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-            <Text style={styles.cancelText}>Cancel ride</Text>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => {
+              Alert.alert(
+                "Cancel Ride",
+                "Do you want to cancel this ride?",
+                [
+                  { text: "No" },
+                  {
+                    text: "Yes",
+                    onPress: async () => {
+                      try {
+                        await cancelRide(
+                          rideId,
+                          "Cancelled by customer"
+                        );
+
+                        navigation.replace("Home");
+                      } catch (e) {
+                        Alert.alert("Error", e.message);
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Text style={styles.cancelText}>Cancel Ride</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -124,28 +192,62 @@ export default function LiveRideScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  map: { flex: 1 },
+  container: {
+    flex: 1,
+  },
+
+  map: {
+    flex: 1,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   sheet: {
     backgroundColor: '#fff',
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    marginTop: -20,
   },
-  status: { fontSize: 17, fontWeight: '700', color: '#0A0F24', marginBottom: 10 },
-  driverRow: { marginBottom: 10 },
-  driverName: { fontSize: 15, fontWeight: '600' },
-  driverMeta: { fontSize: 13, color: '#888' },
-  otp: { fontSize: 15, fontWeight: '600', color: '#1877F2', marginBottom: 10 },
+
+  status: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+
+  driverName: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+
+  driverInfo: {
+    color: '#666',
+    marginBottom: 3,
+  },
+
+  otp: {
+    marginTop: 15,
+    fontSize: 22,
+    color: '#1877F2',
+    fontWeight: '700',
+  },
+
   cancelButton: {
-    borderWidth: 1,
-    borderColor: '#e53935',
+    marginTop: 20,
+    backgroundColor: '#E53935',
+    padding: 15,
     borderRadius: 10,
-    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 6,
   },
-  cancelText: { color: '#e53935', fontWeight: '700' },
+
+  cancelText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
 });
