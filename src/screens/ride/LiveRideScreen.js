@@ -21,30 +21,43 @@ const STATUS_LABELS = {
 };
 
 export default function LiveRideScreen({ route, navigation }) {
-  const { rideId } = route.params || {};
+  // Crash preventer: Securely extract rideId
+  const params = route?.params || {};
+  const rideId = params.rideId || params.id || null;
 
   const [ride, setRide] = useState(null);
   const [driverLocation, setDriverLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const fetchRide = useCallback(async () => {
-    if (!rideId) return;
+    if (!rideId) {
+      setErrorMsg("Ride ID is missing from navigation.");
+      setLoading(false);
+      return;
+    }
+    
     try {
       const res = await getRideById(rideId);
-      const fetchedRide = res?.data?.ride;
+      // Handles both axios 'res.data.ride' and standard fetch 'res.ride'
+      const fetchedRide = res?.data?.ride || res?.ride;
 
       if (fetchedRide) {
         setRide(fetchedRide);
         if (fetchedRide.status === 'completed') {
           navigation.replace('RateRide', { rideId });
         }
+      } else {
+        setErrorMsg("Ride data not found on server.");
       }
     } catch (err) {
       console.log("LiveRide Fetch Error:", err);
+      setErrorMsg(err?.response?.data?.message || err?.message || "Failed to fetch ride");
     } finally {
+      // Yeh line ensure karegi ki spinner kabhi stuck na ho
       setLoading(false);
     }
-  }, [rideId, navigation]);
+  }, [rideId]); // Navigation removed from dependencies to prevent infinite re-renders
 
   useEffect(() => {
     fetchRide();
@@ -60,7 +73,6 @@ export default function LiveRideScreen({ route, navigation }) {
     let unsubscribe = () => {};
     try {
       unsubscribe = onDriverLocation((location) => {
-        // Sirf valid location aane par hi update karein warna Map crash hoga
         if (location?.lat && location?.lng) {
           setDriverLocation({
             lat: Number(location.lat),
@@ -76,31 +88,35 @@ export default function LiveRideScreen({ route, navigation }) {
 
     return () => {
       clearInterval(timer);
-      if (typeof unsubscribe === 'function') unsubscribe();
+      unsubscribe();
     };
   }, [fetchRide, rideId]);
 
+  // UI 1: Loading State (Ab text bhi dikhega)
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#1877F2" />
-        <Text style={{ marginTop: 12, color: '#666' }}>Fetching ride details...</Text>
+        <Text style={{ marginTop: 12, color: '#666', fontWeight: 'bold' }}>Fetching your ride...</Text>
       </View>
     );
   }
 
-  if (!ride) {
+  // UI 2: Error State (White screen ki jagah reason dikhega)
+  if (errorMsg || !ride) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>No Ride Found</Text>
-        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => navigation.replace('Home')}>
-          <Text style={{ color: '#1877F2', fontWeight: 'bold' }}>Go Back Home</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'red' }}>Oops! Something went wrong.</Text>
+        <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20 }}>{errorMsg || "No Ride Found"}</Text>
+        <Text style={{ marginTop: 10, color: '#888' }}>Ride ID: {rideId || 'None'}</Text>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.replace('Home')}>
+          <Text style={styles.cancelText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // Fallback coordinates taaki Map kabhi crash na ho
+  // MapView Crash Preventer (Fallback coordinates)
   const safeLat = Number(ride?.pickup?.lat) || 18.5204;
   const safeLng = Number(ride?.pickup?.lng) || 73.8567;
 
@@ -115,7 +131,8 @@ export default function LiveRideScreen({ route, navigation }) {
           longitudeDelta: 0.03,
         }}
       >
-        {ride?.pickup?.lat && ride?.pickup?.lng && (
+        {/* Strict boolean checks to prevent MapView children crashes */}
+        {ride?.pickup?.lat && ride?.pickup?.lng ? (
           <Marker
             coordinate={{
               latitude: Number(ride.pickup.lat),
@@ -123,9 +140,9 @@ export default function LiveRideScreen({ route, navigation }) {
             }}
             title="Pickup"
           />
-        )}
+        ) : null}
 
-        {ride?.drop?.lat && ride?.drop?.lng && (
+        {ride?.drop?.lat && ride?.drop?.lng ? (
           <Marker
             coordinate={{
               latitude: Number(ride.drop.lat),
@@ -134,9 +151,9 @@ export default function LiveRideScreen({ route, navigation }) {
             title="Drop"
             pinColor="green"
           />
-        )}
+        ) : null}
 
-        {driverLocation?.lat && driverLocation?.lng && (
+        {driverLocation?.lat && driverLocation?.lng ? (
           <Marker
             coordinate={{
               latitude: Number(driverLocation.lat),
@@ -145,7 +162,7 @@ export default function LiveRideScreen({ route, navigation }) {
             title="Driver"
             pinColor="blue"
           />
-        )}
+        ) : null}
       </MapView>
 
       <View style={styles.sheet}>
@@ -153,9 +170,9 @@ export default function LiveRideScreen({ route, navigation }) {
           {STATUS_LABELS[ride?.status] || ride?.status || 'Processing...'}
         </Text>
 
-        {/* 🚨 CRASH FIX: Checking properly if driver object exists */}
+        {/* Safe Driver Rendering */}
         {ride?.driver && typeof ride.driver === 'object' ? (
-          <>
+          <View>
             <Text style={styles.driverName}>
               {ride.driver?.name || 'Driver Assigned'}
             </Text>
@@ -165,21 +182,21 @@ export default function LiveRideScreen({ route, navigation }) {
             <Text style={styles.driverInfo}>
               ⭐ {ride.driver?.rating ? Number(ride.driver.rating).toFixed(1) : "5.0"}
             </Text>
-          </>
+          </View>
         ) : ride?.status === 'requested' ? (
           <Text style={styles.driverInfo}>Looking for nearby drivers...</Text>
         ) : null}
 
-        {/* OTP Dikhane ka Sahi Logic */}
-        {ride?.startOtp ? (
-          ['accepted', 'driver_arrived'].includes(ride?.status) && (
-            <Text style={styles.otp}>
-              OTP : {String(ride.startOtp)}
-            </Text>
-          )
+        {/* OTP DISPLAY LOGIC (Customer ki screen par dikhega) */}
+        {ride?.startOtp && (ride?.status === 'accepted' || ride?.status === 'driver_arrived') ? (
+          <View style={{ marginTop: 15, padding: 10, backgroundColor: '#f0f6ff', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, color: '#666', fontWeight: 'bold' }}>Share this OTP with your driver:</Text>
+            <Text style={styles.otp}>{String(ride.startOtp)}</Text>
+          </View>
         ) : null}
 
-        {['requested', 'accepted'].includes(ride?.status) && (
+        {/* Cancel Button */}
+        {(ride?.status === 'requested' || ride?.status === 'accepted') ? (
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => {
@@ -189,7 +206,8 @@ export default function LiveRideScreen({ route, navigation }) {
                 [
                   { text: "No" },
                   {
-                    text: "Yes",
+                    text: "Yes, Cancel",
+                    style: 'destructive',
                     onPress: async () => {
                       try {
                         await cancelRide(rideId, "Cancelled by customer");
@@ -205,7 +223,7 @@ export default function LiveRideScreen({ route, navigation }) {
           >
             <Text style={styles.cancelText}>Cancel Ride</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -214,12 +232,12 @@ export default function LiveRideScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  sheet: { backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 20, borderTopRightRadius: 20, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5 },
-  status: { fontSize: 18, fontWeight: '700', marginBottom: 12, color: '#0A0F24' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  sheet: { backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5 },
+  status: { fontSize: 20, fontWeight: '800', marginBottom: 12, color: '#0A0F24' },
   driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: '#0A0F24' },
   driverInfo: { color: '#666', marginBottom: 4, fontSize: 14 },
-  otp: { marginTop: 10, fontSize: 24, color: '#1877F2', fontWeight: '800', letterSpacing: 2 },
-  cancelButton: { marginTop: 20, backgroundColor: '#E53935', padding: 15, borderRadius: 10, alignItems: 'center' },
+  otp: { marginTop: 4, fontSize: 28, color: '#1877F2', fontWeight: '900', letterSpacing: 4 },
+  cancelButton: { marginTop: 20, backgroundColor: '#E53935', padding: 16, borderRadius: 12, alignItems: 'center' },
   cancelText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });
