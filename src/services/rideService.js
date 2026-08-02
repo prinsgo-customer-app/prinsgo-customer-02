@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ⚠️ यहाँ अपने लाइव Render बैकएंड का URL डालें
-const API_BASE_URL = 'https://your-render-app-url.onrender.com/api';
+// आपका लाइव Render बैकएंड URL सेट कर दिया गया है
+const API_BASE_URL = 'https://prinsgo-backend.onrender.com/api';
 
 export const bookRideApi = async ({
   pickupAddress,
