@@ -15,6 +15,8 @@ import ComingSoonScreen from '../screens/ComingSoonScreen';
 import WalletScreen from '../screens/WalletScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import AboutScreen from '../screens/AboutScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +44,8 @@ function MainStack() {
       <Stack.Screen name="SavedPlaces" component={ComingSoonScreen} initialParams={{ title: 'Saved places' }} />
       <Stack.Screen name="History" component={HistoryScreen} />
       <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
     </Stack.Navigator>
   );
 }
