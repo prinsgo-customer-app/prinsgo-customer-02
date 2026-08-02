@@ -117,9 +117,17 @@ export default function HomeScreen({ navigation }) {
     }
     if (mode === 'ride') {
       navigation.navigate('VehicleSelect', {
-        pickup: currentLocation,
-        drop: { address: saved.address, lat: saved.lat, lng: saved.lng },
-      });
+  pickup: {
+    address: 'Current Location',
+    lat: currentLocation.lat,
+    lng: currentLocation.lng,
+  },
+  drop: {
+    address: saved.address,
+    lat: saved.lat,
+    lng: saved.lng,
+  },
+});
     } else {
       navigation.navigate('ParcelDetails', {
         pickup: currentLocation,
