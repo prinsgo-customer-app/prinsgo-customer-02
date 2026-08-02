@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import OtpScreen from '../screens/auth/OtpScreen';
+import SplashScreen from '../screens/auth/SplashScreen';
+import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import PlaceSearchScreen from '../screens/PlaceSearchScreen';
 import VehicleSelectScreen from '../screens/ride/VehicleSelectScreen';
@@ -22,7 +24,9 @@ const Stack = createNativeStackNavigator();
 
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
+      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Otp" component={OtpScreen} />
     </Stack.Navigator>
