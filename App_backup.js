@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import io from 'socket.io-client';
 
-const BACKEND_URL = "https://prinsgo-backend.onrender.com"; // Apna live backend URL dalein
+const BACKEND_URL = 'http://192.168.1.100:5000'; // Apna live backend URL dalein
 let socket;
 
 export default function App() {
@@ -10,7 +10,7 @@ export default function App() {
   const [selectedService, setSelectedService] = useState('Car');
   const [pickup, setPickup] = useState('Vijay Nagar, Indore');
   const [drop, setDrop] = useState('Rajwada, Indore');
-  const [walletBalance,setWalletBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(1250);
   const [rideId, setRideId] = useState(null);
   const [driverDetails, setDriverDetails] = useState(null);
   const [driverLocation, setDriverLocation] = useState({ latitude: 22.7196, longitude: 75.8577 });
@@ -18,7 +18,7 @@ export default function App() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [rating, setRating] = useState(5);
 
-  const userId = null;
+  const userId = 'PRINS_USER_01';
 
   useEffect(() => {
     socket = io(BACKEND_URL);
@@ -65,43 +65,6 @@ export default function App() {
   };
 
   const handleBookRide = async (categoryFare, categoryName) => {
-  setScreen('searching');
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/rides/book`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pickup: {
-          address: pickup?.address || "Pickup",
-          lat: pickup?.lat,
-          lng: pickup?.lng,
-        },
-        drop: {
-          address: drop?.address || "Drop",
-          lat: drop?.lat,
-          lng: drop?.lng,
-        },
-        vehicleType: selectedService,
-        paymentMethod: "cash",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      setRideId(data.ride?._id || data.rideId);
-    } else {
-      Alert.alert("Booking Error", data.message || "Could not create ride");
-      setScreen("home");
-    }
-  } catch (error) {
-    Alert.alert("Network Error", error.message);
-    setScreen("home");
-  }
-};
     setScreen('searching');
     try {
       const response = await fetch(`${BACKEND_URL}/api/rides/create`, {
