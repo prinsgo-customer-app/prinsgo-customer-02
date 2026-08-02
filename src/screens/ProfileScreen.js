@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile, addAddress, deleteAddress } from '../api/auth';
+import BottomNav from '../components/BottomNav';
 
 const LABEL_ICONS = { home: '🏠', work: '💼', other: '📍' };
 
@@ -84,7 +85,8 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 60 }}>
+    <View style={styles.screen}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 60, paddingBottom: 110 }}>
       <View style={styles.avatarCircle}>
         <Text style={styles.avatarInitial}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
       </View>
@@ -180,14 +182,53 @@ export default function ProfileScreen({ navigation }) {
         !showAddForm && <Text style={styles.emptyText}>No saved addresses yet.</Text>
       )}
 
+      <View style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('History', { initialTab: 'rides' })}>
+          <Text style={styles.menuIcon}>🏍️</Text>
+          <Text style={styles.menuLabel}>Ride History</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('History', { initialTab: 'parcels' })}>
+          <Text style={styles.menuIcon}>📦</Text>
+          <Text style={styles.menuLabel}>Parcel History</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Wallet')}>
+          <Text style={styles.menuIcon}>💳</Text>
+          <Text style={styles.menuLabel}>Wallet</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Settings')}>
+          <Text style={styles.menuIcon}>⚙️</Text>
+          <Text style={styles.menuLabel}>Settings</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('About')}>
+          <Text style={styles.menuIcon}>ℹ️</Text>
+          <Text style={styles.menuLabel}>About PrinsGo</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => Alert.alert('Support', 'Email support@prinsgo.com or call our helpline for assistance.')}
+        >
+          <Text style={styles.menuIcon}>🎧</Text>
+          <Text style={styles.menuLabel}>Support</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
+      <BottomNav active="Profile" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#fff' },
   container: { flex: 1, backgroundColor: '#fff' },
   avatarCircle: {
     width: 72, height: 72, borderRadius: 36, backgroundColor: '#1877F2',
@@ -228,4 +269,12 @@ const styles = StyleSheet.create({
   emptyText: { color: '#888', fontSize: 13, marginBottom: 10 },
   logoutButton: { borderWidth: 1, borderColor: '#e53935', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 32, marginBottom: 20 },
   logoutText: { color: '#e53935', fontWeight: '700' },
+  menuSection: { marginTop: 28 },
+  menuRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#f0f0f0', gap: 12,
+  },
+  menuIcon: { fontSize: 18, width: 24 },
+  menuLabel: { flex: 1, fontSize: 15, color: '#0A0F24', fontWeight: '500' },
+  chevron: { color: '#bbb', fontSize: 18 },
 });

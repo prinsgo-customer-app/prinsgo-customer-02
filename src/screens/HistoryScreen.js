@@ -7,9 +7,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
+import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
+import BottomNav from '../components/BottomNav';
 
 const STATUS_COLORS = {
   completed: '#16A34A',
@@ -17,11 +20,12 @@ const STATUS_COLORS = {
   cancelled: '#DC2626',
 };
 
-export default function HistoryScreen() {
-  const [tab, setTab] = useState('rides');
+export default function HistoryScreen({ route }) {
+  const [tab, setTab] = useState(route?.params?.initialTab || 'rides');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const load = useCallback(async (mode) => {
     try {
@@ -50,10 +54,27 @@ export default function HistoryScreen() {
     load(tab);
   };
 
+  const downloadInvoice = async (item) => {
+    setDownloadingId(item._id);
+    try {
+      if (tab === 'rides') {
+        await generateRideInvoice(item);
+      } else {
+        await generateParcelInvoice(item);
+      }
+    } catch (err) {
+      Alert.alert('Error', "Couldn't generate invoice. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const isCompleted = (item) => item.status === 'completed' || item.status === 'delivered';
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>History</Text>
+        <Text style={styles.title}>Bookings</Text>
       </View>
 
       <View style={styles.tabRow}>
@@ -79,41 +100,51 @@ export default function HistoryScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <Text style={styles.emptyText}>
               No {tab === 'rides' ? 'ride' : 'parcel'} history yet.
             </Text>
           }
-          renderItem={({ item }) =>
-            tab === 'rides' ? (
-              <View style={styles.card}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                  <Text style={[styles.status, { color: STATUS_COLORS[item.status] || '#888' }]}>
-                    {item.status}
-                  </Text>
-                </View>
-                <Text style={styles.address}>From: {item.pickup?.address}</Text>
-                <Text style={styles.address}>To: {item.drop?.address}</Text>
-                <Text style={styles.fare}>₹{Math.round(item.fare?.totalFare || 0)}</Text>
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.cardTop}>
+                <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                <Text style={[styles.status, { color: STATUS_COLORS[item.status] || '#888' }]}>
+                  {item.status}
+                </Text>
               </View>
-            ) : (
-              <View style={styles.card}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                  <Text style={[styles.status, { color: STATUS_COLORS[item.status] || '#888' }]}>
-                    {item.status}
-                  </Text>
-                </View>
-                <Text style={styles.address}>To: {item.drop?.contactName} · {item.drop?.address}</Text>
-                <Text style={styles.fare}>₹{Math.round(item.charges?.totalCharge || 0)}</Text>
-              </View>
-            )
-          }
+              {tab === 'rides' ? (
+                <>
+                  <Text style={styles.address}>From: {item.pickup?.address}</Text>
+                  <Text style={styles.address}>To: {item.drop?.address}</Text>
+                  <Text style={styles.fare}>₹{Math.round(item.fare?.totalFare || 0)}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.address}>To: {item.drop?.contactName} · {item.drop?.address}</Text>
+                  <Text style={styles.fare}>₹{Math.round(item.charges?.totalCharge || 0)}</Text>
+                </>
+              )}
+              {isCompleted(item) && (
+                <TouchableOpacity
+                  style={styles.invoiceButton}
+                  onPress={() => downloadInvoice(item)}
+                  disabled={downloadingId === item._id}
+                >
+                  {downloadingId === item._id ? (
+                    <ActivityIndicator size="small" color="#1877F2" />
+                  ) : (
+                    <Text style={styles.invoiceButtonText}>📄 Download Invoice</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         />
       )}
+      <BottomNav active="History" />
     </View>
   );
 }
@@ -135,4 +166,8 @@ const styles = StyleSheet.create({
   status: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
   address: { fontSize: 13, color: '#333', marginBottom: 2 },
   fare: { fontSize: 15, fontWeight: '700', color: '#0A0F24', marginTop: 6 },
+  invoiceButton: {
+    marginTop: 10, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10, alignItems: 'center',
+  },
+  invoiceButtonText: { color: '#1877F2', fontSize: 13, fontWeight: '700' },
 });
