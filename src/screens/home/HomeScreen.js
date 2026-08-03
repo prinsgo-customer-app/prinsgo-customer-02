@@ -1,25 +1,37 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+} from "react-native";
+
+import HomeHeader from "../../components/home/HomeHeader";
+import SearchBar from "../../components/common/SearchBar";
+import HomeMap from "../../components/map/HomeMap";
+import ServicesGrid from "../../components/home/ServicesGrid";
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        backgroundColor="#FFFFFF"
+        barStyle="dark-content"
+      />
 
-      <Text style={styles.logo}>PrinsGo</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        <HomeHeader />
 
-      <Text style={styles.tagline}>
-        Ride • Parcel • Safe • Smart
-      </Text>
+        <SearchBar />
 
-      <Text style={styles.welcome}>
-        Welcome to PrinsGo
-      </Text>
+        <HomeMap />
 
-      <Text style={styles.description}>
-        Customer App Successfully Started
-      </Text>
-
-    </View>
+        <ServicesGrid />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -27,34 +39,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
   },
 
-  logo: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#1976D2",
-  },
-
-  tagline: {
-    marginTop: 8,
-    fontSize: 17,
-    color: "#666",
-  },
-
-  welcome: {
-    marginTop: 35,
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111",
-  },
-
-  description: {
-    marginTop: 12,
-    fontSize: 17,
-    color: "#777",
-    textAlign: "center",
+  content: {
+    paddingBottom: 30,
   },
 });
