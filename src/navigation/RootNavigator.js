@@ -1,73 +1,26 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View } from 'react-native';
-import { useAuth } from '../context/AuthContext';
 
+import SplashScreen from '../screens/splash/SplashScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import OtpScreen from '../screens/auth/OtpScreen';
-import SplashScreen from '../screens/auth/SplashScreen';
-import OnboardingScreen from '../screens/auth/OnboardingScreen';
-import HomeScreen from '../screens/HomeScreen';
-import PlaceSearchScreen from '../screens/PlaceSearchScreen';
-import VehicleSelectScreen from '../screens/ride/VehicleSelectScreen';
-import LiveRideScreen from '../screens/ride/LiveRideScreen';
-import RateRideScreen from '../screens/ride/RateRideScreen';
-import ComingSoonScreen from '../screens/ComingSoonScreen';
-import WalletScreen from '../screens/WalletScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import HistoryScreen from '../screens/HistoryScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import AboutScreen from '../screens/AboutScreen';
+import HomeScreen from '../screens/home/HomeScreen';
 
 const Stack = createNativeStackNavigator();
 
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
-      <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Otp" component={OtpScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function MainStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="PlaceSearch" component={PlaceSearchScreen} />
-      <Stack.Screen name="VehicleSelect" component={VehicleSelectScreen} />
-      <Stack.Screen name="LiveRide" component={LiveRideScreen} />
-      <Stack.Screen name="RateRide" component={RateRideScreen} />
-      {/* Phase 2 screens */}
-      <Stack.Screen name="ParcelDetails" component={ComingSoonScreen} initialParams={{ title: 'Parcel booking' }} />
-      <Stack.Screen name="LiveParcel" component={ComingSoonScreen} initialParams={{ title: 'Parcel tracking' }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="SavedPlaces" component={ComingSoonScreen} initialParams={{ title: 'Saved places' }} />
-      <Stack.Screen name="History" component={HistoryScreen} />
-      <Stack.Screen name="Wallet" component={WalletScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="About" component={AboutScreen} />
-    </Stack.Navigator>
-  );
-}
-
 export default function RootNavigator() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#1877F2" />
-      </View>
-    );
-  }
-
   return (
     <NavigationContainer>
-      {user ? <MainStack /> : <AuthStack />}
+      <Stack.Navigator
+        initialRouteName="Splash"
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Otp" component={OtpScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
