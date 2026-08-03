@@ -6,17 +6,29 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
+
     "android": {
+      "package": "com.prinsgo.customer",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBkSCVExxM8H0cOFxkykMaMO_h0Hu8A4SI"
+        }
+      },
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#F6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
+
+    "ios": {
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyBkSCVExxM8H0cOFxkykMaMO_h0Hu8A4SI"
+      }
+    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     }
