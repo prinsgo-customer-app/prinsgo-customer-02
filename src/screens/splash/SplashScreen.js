@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 export default function SplashScreen({ navigation }) {
 
@@ -13,11 +13,15 @@ export default function SplashScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <Text
+  style={{
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#1976D2"
+  }}
+>
+  PrinsGo
+</Text>
     </View>
   );
 }
