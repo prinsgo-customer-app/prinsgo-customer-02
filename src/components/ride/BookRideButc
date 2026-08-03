@@ -1,0 +1,35 @@
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+} from "react-native";
+
+export default function BookRideButton() {
+  return (
+    <TouchableOpacity style={styles.button}>
+      <Text style={styles.text}>
+        Book Ride
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+
+  button: {
+    margin: 16,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#1976D2",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  text: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+
+});
