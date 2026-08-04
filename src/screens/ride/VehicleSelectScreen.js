@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 
 // API services
-import { estimateFare } from '../../api/rides';
-import { bookRideApi } from '../../services/rideService';
+import { estimateFare, bookRide } from '../../api/rides';
 
 const VEHICLE_LABELS = {
   bike: { label: 'Bike', icon: '🏍️' },
@@ -74,25 +73,25 @@ export default function VehicleSelectScreen({ route, navigation }) {
       const dLat = drop?.lat || drop?.latitude;
       const dLng = drop?.lng || drop?.longitude;
 
-      // New API service call
-      const res = await bookRideApi({
-        pickupAddress: pickup.address || 'Current Location',
-        pickupLat: pLat,
-        pickupLng: pLng,
-        dropAddress: drop.address || 'Drop Location',
-        dropLat: dLat,
-        dropLng: dLng,
+      const res = await bookRide({
+        pickup: {
+          address: pickup.address || 'Current Location',
+          lat: pLat,
+          lng: pLng,
+        },
+        drop: {
+          address: drop.address || 'Drop Location',
+          lat: dLat,
+          lng: dLng,
+        },
         vehicleType: selected,
         paymentMethod: 'cash',
       });
 
-      const rideId = res?.ride?._id || res?.data?.ride?._id;
+      const rideId = res?.data?.ride?._id;
 
       if (!rideId) {
-        Alert.alert(
-          'Booking Failed',
-          res?.message || res?.data?.message || 'Ride ID not received from server'
-        );
+        Alert.alert('Booking Failed', res?.data?.message || 'Ride ID not received from server');
         return;
       }
 
