@@ -10,6 +10,7 @@ import {
 import MapView, { Marker } from 'react-native-maps';
 import { getParcelById, cancelParcel } from '../../api/parcels';
 import { joinParcelRoom, onDriverLocation } from '../../api/socket';
+import { COLORS } from '../../utils/theme';
 
 const STATUS_LABELS = {
   requested: 'Looking for a delivery partner...',
@@ -57,7 +58,7 @@ export default function LiveParcelScreen({ route, navigation }) {
       try {
         joinParcelRoom(parcelId);
       } catch (e) {
-        // socket join failing shouldn't block the tracking screen
+        // ignore
       }
     }
 
@@ -83,8 +84,8 @@ export default function LiveParcelScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1877F2" />
-        <Text style={{ marginTop: 12, color: '#666', fontWeight: 'bold' }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 12, color: COLORS.textSecondary, fontWeight: 'bold' }}>
           Fetching your parcel...
         </Text>
       </View>
@@ -94,12 +95,12 @@ export default function LiveParcelScreen({ route, navigation }) {
   if (errorMsg || !parcel) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'red' }}>Oops! Something went wrong.</Text>
-        <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.red }}>Oops! Something went wrong.</Text>
+        <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20, color: COLORS.textSecondary }}>
           {errorMsg || 'No parcel found'}
         </Text>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.replace('Home')}>
-          <Text style={styles.cancelText}>Go Back Home</Text>
+        <TouchableOpacity style={styles.doneButton} onPress={() => navigation.replace('Home')}>
+          <Text style={styles.doneText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
     );
@@ -159,8 +160,8 @@ export default function LiveParcelScreen({ route, navigation }) {
         ) : null}
 
         {parcel?.receiverOtp && ['accepted', 'picked_up', 'in_transit'].includes(parcel?.status) ? (
-          <View style={{ marginTop: 15, padding: 10, backgroundColor: '#f0f6ff', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, color: '#666', fontWeight: 'bold' }}>
+          <View style={{ marginTop: 15, padding: 12, backgroundColor: COLORS.cardBg, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }}>
+            <Text style={{ fontSize: 13, color: COLORS.textSecondary, fontWeight: 'bold' }}>
               Share this OTP with the receiver — the delivery partner needs it to complete delivery:
             </Text>
             <Text style={styles.otp}>{String(parcel.receiverOtp)}</Text>
@@ -201,19 +202,19 @@ export default function LiveParcelScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS.background },
   map: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: COLORS.background },
   sheet: {
-    backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: COLORS.background, padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5,
   },
-  status: { fontSize: 20, fontWeight: '800', marginBottom: 12, color: '#0A0F24' },
-  driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: '#0A0F24' },
-  driverInfo: { color: '#666', marginBottom: 4, fontSize: 14 },
-  otp: { marginTop: 4, fontSize: 28, color: '#1877F2', fontWeight: '900', letterSpacing: 4 },
-  cancelButton: { marginTop: 20, backgroundColor: '#E53935', padding: 16, borderRadius: 12, alignItems: 'center' },
-  cancelText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  doneButton: { marginTop: 20, backgroundColor: '#16A34A', padding: 16, borderRadius: 12, alignItems: 'center' },
-  doneText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  status: { fontSize: 20, fontWeight: '800', marginBottom: 12, color: COLORS.textPrimary },
+  driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: COLORS.textPrimary },
+  driverInfo: { color: COLORS.textSecondary, marginBottom: 4, fontSize: 14 },
+  otp: { marginTop: 4, fontSize: 28, color: COLORS.textPrimary, fontWeight: '900', letterSpacing: 4 },
+  cancelButton: { marginTop: 20, backgroundColor: COLORS.red, padding: 16, borderRadius: 12, alignItems: 'center' },
+  cancelText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
+  doneButton: { marginTop: 20, backgroundColor: COLORS.green, padding: 16, borderRadius: 12, alignItems: 'center' },
+  doneText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
 });

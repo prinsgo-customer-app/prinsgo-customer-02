@@ -10,6 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { estimateParcelCharge, bookParcel } from '../../api/parcels';
+import { COLORS } from '../../utils/theme';
 
 const PARCEL_TYPES = [
   { key: 'document', label: 'Document', icon: '📄' },
@@ -134,13 +135,13 @@ export default function ParcelDetailsScreen({ route, navigation }) {
 
       <View style={styles.routeCard}>
         <View style={styles.routeRow}>
-          <View style={[styles.dot, { backgroundColor: '#1877F2' }]} />
+          <View style={[styles.dot, { backgroundColor: COLORS.primary }]} />
           <Text style={styles.routeText} numberOfLines={1}>
             {pickup?.address || 'Current Location'}
           </Text>
         </View>
         <View style={styles.routeRow}>
-          <View style={[styles.dot, { backgroundColor: '#DC2626' }]} />
+          <View style={[styles.dot, { backgroundColor: COLORS.red }]} />
           <Text style={styles.routeText} numberOfLines={1}>
             {drop?.address || 'Drop Location'}
           </Text>
@@ -151,12 +152,14 @@ export default function ParcelDetailsScreen({ route, navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Sender's full name"
+        placeholderTextColor={COLORS.textLight}
         value={senderName}
         onChangeText={setSenderName}
       />
       <TextInput
         style={styles.input}
         placeholder="Sender's 10-digit mobile number"
+        placeholderTextColor={COLORS.textLight}
         keyboardType="number-pad"
         maxLength={10}
         value={senderPhone}
@@ -167,12 +170,14 @@ export default function ParcelDetailsScreen({ route, navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Receiver's full name"
+        placeholderTextColor={COLORS.textLight}
         value={receiverName}
         onChangeText={setReceiverName}
       />
       <TextInput
         style={styles.input}
         placeholder="Receiver's 10-digit mobile number"
+        placeholderTextColor={COLORS.textLight}
         keyboardType="number-pad"
         maxLength={10}
         value={receiverPhone}
@@ -227,7 +232,7 @@ export default function ParcelDetailsScreen({ route, navigation }) {
 
       <View style={styles.fareCard}>
         {estimating ? (
-          <ActivityIndicator color="#1877F2" />
+          <ActivityIndicator color={COLORS.primary} />
         ) : estimate ? (
           <>
             <View style={styles.fareRow}>
@@ -256,7 +261,7 @@ export default function ParcelDetailsScreen({ route, navigation }) {
         disabled={booking || estimating}
       >
         {booking ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={COLORS.textPrimary} />
         ) : (
           <Text style={styles.buttonText}>Book Parcel</Text>
         )}
@@ -266,39 +271,39 @@ export default function ParcelDetailsScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20, paddingTop: 60 },
-  title: { fontSize: 24, fontWeight: '800', color: '#0A0F24', marginBottom: 16 },
+  container: { flex: 1, backgroundColor: COLORS.background, padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 16 },
   routeCard: {
-    borderWidth: 1, borderColor: '#eee', borderRadius: 14, padding: 14, marginBottom: 20,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: COLORS.background
   },
   routeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   dot: { width: 9, height: 9, borderRadius: 4.5, marginRight: 10 },
-  routeText: { flex: 1, fontSize: 14, color: '#333' },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: '#0A0F24', marginBottom: 8, marginTop: 6 },
+  routeText: { flex: 1, fontSize: 14, color: COLORS.textSecondary },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8, marginTop: 6 },
   input: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 10,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 10, color: COLORS.textPrimary
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#ddd',
+    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border,
     borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8,
   },
   chipIcon: { fontSize: 15, marginRight: 6 },
   weightChip: {
-    borderWidth: 1.5, borderColor: '#ddd', borderRadius: 20,
+    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 20,
     paddingVertical: 8, paddingHorizontal: 14, marginRight: 8, marginBottom: 8,
   },
-  chipActive: { borderColor: '#1877F2', backgroundColor: '#eef6ff' },
-  chipText: { fontSize: 13, color: '#555', fontWeight: '600' },
-  chipTextActive: { color: '#1877F2' },
+  chipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.cardBg },
+  chipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  chipTextActive: { color: COLORS.textPrimary },
   fareCard: {
-    backgroundColor: '#F2F4F7', borderRadius: 14, padding: 16, marginTop: 14, marginBottom: 20,
+    backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 16, marginTop: 14, marginBottom: 20, borderWidth: 1, borderColor: COLORS.border
   },
   fareRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  fareLabel: { color: '#666', fontSize: 13 },
-  fareValue: { color: '#333', fontSize: 13, fontWeight: '600' },
-  fareTotalLabel: { color: '#0A0F24', fontSize: 15, fontWeight: '700' },
-  fareTotalValue: { color: '#1877F2', fontSize: 18, fontWeight: '800' },
-  button: { backgroundColor: '#1877F2', padding: 18, borderRadius: 15, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  fareLabel: { color: COLORS.textSecondary, fontSize: 13 },
+  fareValue: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '600' },
+  fareTotalLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700' },
+  fareTotalValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '800' },
+  button: { backgroundColor: COLORS.primary, padding: 18, borderRadius: 15, alignItems: 'center' },
+  buttonText: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
 });

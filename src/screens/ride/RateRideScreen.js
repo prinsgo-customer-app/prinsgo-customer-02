@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { rateRide } from '../../api/rides';
+import { COLORS } from '../../utils/theme';
 
 export default function RateRideScreen({ route, navigation }) {
   const { rideId } = route.params;
@@ -35,6 +36,7 @@ export default function RateRideScreen({ route, navigation }) {
         value={review}
         onChangeText={setReview}
         multiline
+        placeholderTextColor={COLORS.textLight}
       />
 
       <TouchableOpacity style={styles.button} onPress={submit}>
@@ -42,28 +44,29 @@ export default function RateRideScreen({ route, navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.replace('Home')} style={{ marginTop: 14 }}>
-        <Text style={{ textAlign: 'center', color: '#888' }}>Skip</Text>
+        <Text style={{ textAlign: 'center', color: COLORS.textLight, fontWeight: '600' }}>Skip</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center' },
-  title: { fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 6 },
-  subtitle: { textAlign: 'center', color: '#888', marginBottom: 24 },
+  container: { flex: 1, backgroundColor: COLORS.background, padding: 24, justifyContent: 'center' },
+  title: { fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 6, color: COLORS.textPrimary },
+  subtitle: { textAlign: 'center', color: COLORS.textSecondary, marginBottom: 24 },
   stars: { flexDirection: 'row', justifyContent: 'center', marginBottom: 24 },
-  star: { fontSize: 40, color: '#ddd', marginHorizontal: 4 },
-  starActive: { color: '#FFB800' },
+  star: { fontSize: 40, color: COLORS.border, marginHorizontal: 4 },
+  starActive: { color: COLORS.primary },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: COLORS.border,
     borderRadius: 10,
     padding: 14,
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 20,
+    color: COLORS.textPrimary,
   },
-  button: { backgroundColor: '#1877F2', borderRadius: 10, paddingVertical: 15, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  button: { backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 15, alignItems: 'center' },
+  buttonText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 16 },
 });

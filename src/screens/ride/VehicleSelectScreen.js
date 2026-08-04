@@ -8,9 +8,8 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-
-// API services
 import { estimateFare, bookRide } from '../../api/rides';
+import { COLORS } from '../../utils/theme';
 
 const VEHICLE_LABELS = {
   bike: { label: 'Bike', icon: '🏍️' },
@@ -95,7 +94,6 @@ export default function VehicleSelectScreen({ route, navigation }) {
         return;
       }
 
-      // Booking success -> Go to Live Ride screen
       navigation.replace('LiveRide', {
         rideId: rideId,
       });
@@ -110,7 +108,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1877F2" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Finding best fare...</Text>
       </View>
     );
@@ -156,7 +154,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
         disabled={booking}
       >
         {booking ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={COLORS.textPrimary} />
         ) : (
           <Text style={styles.buttonText}>Book Ride</Text>
         )}
@@ -168,7 +166,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
     padding: 20,
     paddingTop: 60,
   },
@@ -176,29 +174,33 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#666',
+    color: COLORS.textSecondary,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 24,
     fontWeight: '800',
     marginBottom: 20,
+    color: COLORS.textPrimary,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 18,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: COLORS.border,
     borderRadius: 15,
     marginBottom: 12,
+    backgroundColor: COLORS.background,
   },
   selected: {
-    borderColor: '#1877F2',
-    backgroundColor: '#eef6ff',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.cardBg,
   },
   icon: {
     fontSize: 35,
@@ -207,24 +209,26 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 17,
     fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   duration: {
-    color: '#666',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   price: {
     fontSize: 18,
     fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   button: {
-    backgroundColor: '#1877F2',
+    backgroundColor: COLORS.primary,
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
     marginBottom: 20,
   },
   buttonText: {
-    color: '#fff',
+    color: COLORS.textPrimary,
     fontSize: 18,
     fontWeight: '700',
   },

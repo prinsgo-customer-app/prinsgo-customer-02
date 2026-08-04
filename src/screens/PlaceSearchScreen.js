@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { searchPlaces, placeDetails } from '../api/places';
+import { COLORS } from '../utils/theme';
 
 export default function PlaceSearchScreen({ route, navigation }) {
   const { mode, currentLocation } = route.params;
@@ -51,7 +52,7 @@ export default function PlaceSearchScreen({ route, navigation }) {
         navigation.replace('ParcelDetails', { pickup: currentLocation, drop });
       }
     } catch (err) {
-      // ignore - could show error toast
+      // ignore
     }
   };
 
@@ -61,10 +62,11 @@ export default function PlaceSearchScreen({ route, navigation }) {
         autoFocus
         style={styles.input}
         placeholder="Search for a location"
+        placeholderTextColor={COLORS.textLight}
         value={query}
         onChangeText={onChangeText}
       />
-      {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
+      {loading && <ActivityIndicator style={{ marginTop: 10 }} color={COLORS.primary} />}
       <FlatList
         data={results}
         keyExtractor={(item, idx) => item.placeId || item.place_id || String(idx)}
@@ -79,15 +81,16 @@ export default function PlaceSearchScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 16 },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 60, paddingHorizontal: 16 },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: COLORS.border,
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
     marginBottom: 12,
+    color: COLORS.textPrimary,
   },
-  row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  rowText: { fontSize: 15, color: '#333' },
+  row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  rowText: { fontSize: 15, color: COLORS.textPrimary },
 });

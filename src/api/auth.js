@@ -13,3 +13,12 @@ export const addAddress = (data) => apiClient.post('/auth/address', data);
 
 export const deleteAddress = (addressId) =>
   apiClient.delete(`/auth/address/${addressId}`);
+
+// Customer read-only APIs for Admin settings, Banners, Feature Toggles, and Notifications (Option A)
+export const getSettings = () => apiClient.get('/auth/settings');
+
+export const getToggles = () => apiClient.get('/auth/toggles');
+
+export const getBanners = () => apiClient.get('/auth/banners');
+
+export const getNotifications = () => apiClient.get('/auth/notifications');

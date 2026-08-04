@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { COLORS } from '../../utils/theme';
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
@@ -22,8 +23,8 @@ export default function SplashScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0F24', justifyContent: 'center', alignItems: 'center' },
-  logo: { fontSize: 42, fontWeight: '800', color: '#fff' },
-  logoAccent: { color: '#1877F2' },
-  tagline: { color: '#8A94B0', fontSize: 14, marginTop: 8, letterSpacing: 1 },
+  container: { flex: 1, backgroundColor: COLORS.textPrimary, justifyContent: 'center', alignItems: 'center' },
+  logo: { fontSize: 42, fontWeight: '800', color: COLORS.background },
+  logoAccent: { color: COLORS.primary },
+  tagline: { color: COLORS.textLight, fontSize: 14, marginTop: 8, letterSpacing: 1 },
 });

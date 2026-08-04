@@ -13,11 +13,12 @@ import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
 import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
+import { COLORS } from '../utils/theme';
 
 const STATUS_COLORS = {
-  completed: '#16A34A',
-  delivered: '#16A34A',
-  cancelled: '#DC2626',
+  completed: COLORS.green,
+  delivered: COLORS.green,
+  cancelled: COLORS.red,
 };
 
 export default function HistoryScreen({ route }) {
@@ -94,7 +95,7 @@ export default function HistoryScreen({ route }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#1877F2" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
         <FlatList
@@ -111,7 +112,7 @@ export default function HistoryScreen({ route }) {
             <View style={styles.card}>
               <View style={styles.cardTop}>
                 <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                <Text style={[styles.status, { color: STATUS_COLORS[item.status] || '#888' }]}>
+                <Text style={[styles.status, { color: STATUS_COLORS[item.status] || COLORS.textLight }]}>
                   {item.status}
                 </Text>
               </View>
@@ -134,7 +135,7 @@ export default function HistoryScreen({ route }) {
                   disabled={downloadingId === item._id}
                 >
                   {downloadingId === item._id ? (
-                    <ActivityIndicator size="small" color="#1877F2" />
+                    <ActivityIndicator size="small" color={COLORS.primary} />
                   ) : (
                     <Text style={styles.invoiceButtonText}>📄 Download Invoice</Text>
                   )}
@@ -150,24 +151,24 @@ export default function HistoryScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { paddingHorizontal: 20, paddingTop: 50 },
-  title: { fontSize: 22, fontWeight: '700', color: '#0A0F24' },
+  title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
   tabRow: { flexDirection: 'row', marginHorizontal: 20, marginTop: 16, marginBottom: 8 },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: '#1877F2' },
-  tabText: { fontSize: 14, color: '#888', fontWeight: '600' },
-  tabTextActive: { color: '#1877F2' },
-  emptyText: { textAlign: 'center', color: '#888', marginTop: 60 },
-  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 14, marginBottom: 10 },
+  tabActive: { borderBottomColor: COLORS.primary },
+  tabText: { fontSize: 14, color: COLORS.textLight, fontWeight: '600' },
+  tabTextActive: { color: COLORS.textPrimary, fontWeight: '700' },
+  emptyText: { textAlign: 'center', color: COLORS.textLight, marginTop: 60 },
+  card: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 14, marginBottom: 10, backgroundColor: COLORS.background },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  date: { fontSize: 12, color: '#999' },
+  date: { fontSize: 12, color: COLORS.textLight },
   status: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
-  address: { fontSize: 13, color: '#333', marginBottom: 2 },
-  fare: { fontSize: 15, fontWeight: '700', color: '#0A0F24', marginTop: 6 },
+  address: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 2 },
+  fare: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginTop: 6 },
   invoiceButton: {
-    marginTop: 10, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10, alignItems: 'center',
+    marginTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10, alignItems: 'center',
   },
-  invoiceButtonText: { color: '#1877F2', fontSize: 13, fontWeight: '700' },
+  invoiceButtonText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700' },
 });
