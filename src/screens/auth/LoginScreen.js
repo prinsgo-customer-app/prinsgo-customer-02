@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { sendOtp } from '../../api/auth';
+import { COLORS } from '../../utils/theme';
 
 export default function LoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
@@ -56,7 +57,7 @@ export default function LoginScreen({ navigation }) {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={COLORS.textPrimary} />
         ) : (
           <Text style={styles.buttonText}>Continue</Text>
         )}
@@ -66,27 +67,27 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center' },
-  logo: { fontSize: 34, fontWeight: '800', color: '#0A0F24', textAlign: 'center' },
-  logoAccent: { color: '#1877F2' },
-  tagline: { textAlign: 'center', color: '#888', marginBottom: 40, marginTop: 4 },
-  label: { fontSize: 15, color: '#333', marginBottom: 8 },
+  container: { flex: 1, backgroundColor: COLORS.background, padding: 24, justifyContent: 'center' },
+  logo: { fontSize: 34, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
+  logoAccent: { color: COLORS.primary },
+  tagline: { textAlign: 'center', color: COLORS.textSecondary, marginBottom: 40, marginTop: 4 },
+  label: { fontSize: 15, color: COLORS.textSecondary, marginBottom: 8 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     marginBottom: 24,
   },
-  prefix: { fontSize: 16, color: '#333', marginRight: 8, fontWeight: '600' },
-  input: { flex: 1, fontSize: 16, paddingVertical: 14 },
+  prefix: { fontSize: 16, color: COLORS.textPrimary, marginRight: 8, fontWeight: '600' },
+  input: { flex: 1, fontSize: 16, paddingVertical: 14, color: COLORS.textPrimary },
   button: {
-    backgroundColor: '#1877F2',
+    backgroundColor: COLORS.primary,
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  buttonText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700' },
 });

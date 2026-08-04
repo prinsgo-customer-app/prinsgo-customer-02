@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { COLORS } from '../utils/theme';
 
 const TABS = [
   { key: 'Home', label: 'Home', icon: '🏠' },
@@ -48,20 +49,20 @@ export default function BottomNav({ active }) {
 const styles = StyleSheet.create({
   bottomNav: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#EEE',
+    flexDirection: 'row', backgroundColor: COLORS.background,
+    borderTopWidth: 1, borderTopColor: COLORS.border,
     paddingTop: 10, paddingBottom: 22, paddingHorizontal: 8,
     justifyContent: 'space-around', alignItems: 'center',
   },
   bottomNavItem: { alignItems: 'center', flex: 1 },
   bottomNavIcon: { fontSize: 20, opacity: 0.5 },
   bottomNavIconActive: { fontSize: 20 },
-  bottomNavLabel: { fontSize: 11, color: '#999', marginTop: 3, fontWeight: '600' },
-  bottomNavLabelActive: { fontSize: 11, color: '#1877F2', marginTop: 3, fontWeight: '700' },
+  bottomNavLabel: { fontSize: 11, color: COLORS.textLight, marginTop: 3, fontWeight: '600' },
+  bottomNavLabelActive: { fontSize: 11, color: COLORS.textPrimary, marginTop: 3, fontWeight: '700' },
   bottomNavCenterButton: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#1877F2',
+    width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.primary,
     justifyContent: 'center', alignItems: 'center', marginTop: -26,
-    shadowColor: '#1877F2', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+    shadowColor: COLORS.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
   },
   bottomNavCenterIcon: { fontSize: 20 },
 });

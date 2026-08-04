@@ -10,6 +10,7 @@ import {
 import MapView, { Marker } from 'react-native-maps';
 import { getRideById, cancelRide } from '../../api/rides';
 import { joinRideRoom, onDriverLocation } from '../../api/socket';
+import { COLORS } from '../../utils/theme';
 
 const STATUS_LABELS = {
   requested: 'Searching for a driver...',
@@ -21,7 +22,6 @@ const STATUS_LABELS = {
 };
 
 export default function LiveRideScreen({ route, navigation }) {
-  // Crash preventer: Securely extract rideId
   const params = route?.params || {};
   const rideId = params.rideId || params.id || null;
 
@@ -39,7 +39,6 @@ export default function LiveRideScreen({ route, navigation }) {
     
     try {
       const res = await getRideById(rideId);
-      // Handles both axios 'res.data.ride' and standard fetch 'res.ride'
       const fetchedRide = res?.data?.ride || res?.ride;
 
       if (fetchedRide) {
@@ -54,10 +53,9 @@ export default function LiveRideScreen({ route, navigation }) {
       console.log("LiveRide Fetch Error:", err);
       setErrorMsg(err?.response?.data?.message || err?.message || "Failed to fetch ride");
     } finally {
-      // Yeh line ensure karegi ki spinner kabhi stuck na ho
       setLoading(false);
     }
-  }, [rideId]); // Navigation removed from dependencies to prevent infinite re-renders
+  }, [rideId]);
 
   useEffect(() => {
     fetchRide();
@@ -92,31 +90,28 @@ export default function LiveRideScreen({ route, navigation }) {
     };
   }, [fetchRide, rideId]);
 
-  // UI 1: Loading State (Ab text bhi dikhega)
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1877F2" />
-        <Text style={{ marginTop: 12, color: '#666', fontWeight: 'bold' }}>Fetching your ride...</Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 12, color: COLORS.textSecondary, fontWeight: 'bold' }}>Fetching your ride...</Text>
       </View>
     );
   }
 
-  // UI 2: Error State (White screen ki jagah reason dikhega)
   if (errorMsg || !ride) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'red' }}>Oops! Something went wrong.</Text>
-        <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20 }}>{errorMsg || "No Ride Found"}</Text>
-        <Text style={{ marginTop: 10, color: '#888' }}>Ride ID: {rideId || 'None'}</Text>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.replace('Home')}>
-          <Text style={styles.cancelText}>Go Back Home</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.red }}>Oops! Something went wrong.</Text>
+        <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20, color: COLORS.textSecondary }}>{errorMsg || "No Ride Found"}</Text>
+        <Text style={{ marginTop: 10, color: COLORS.textLight }}>Ride ID: {rideId || 'None'}</Text>
+        <TouchableOpacity style={styles.goHomeBtn} onPress={() => navigation.replace('Home')}>
+          <Text style={styles.goHomeText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // MapView Crash Preventer (Fallback coordinates)
   const safeLat = Number(ride?.pickup?.lat) || 18.5204;
   const safeLng = Number(ride?.pickup?.lng) || 73.8567;
 
@@ -131,7 +126,6 @@ export default function LiveRideScreen({ route, navigation }) {
           longitudeDelta: 0.03,
         }}
       >
-        {/* Strict boolean checks to prevent MapView children crashes */}
         {ride?.pickup?.lat && ride?.pickup?.lng ? (
           <Marker
             coordinate={{
@@ -170,7 +164,6 @@ export default function LiveRideScreen({ route, navigation }) {
           {STATUS_LABELS[ride?.status] || ride?.status || 'Processing...'}
         </Text>
 
-        {/* Safe Driver Rendering */}
         {ride?.driver && typeof ride.driver === 'object' ? (
           <View>
             <Text style={styles.driverName}>
@@ -187,15 +180,13 @@ export default function LiveRideScreen({ route, navigation }) {
           <Text style={styles.driverInfo}>Looking for nearby drivers...</Text>
         ) : null}
 
-        {/* OTP DISPLAY LOGIC (Customer ki screen par dikhega) */}
         {ride?.startOtp && (ride?.status === 'accepted' || ride?.status === 'driver_arrived') ? (
-          <View style={{ marginTop: 15, padding: 10, backgroundColor: '#f0f6ff', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, color: '#666', fontWeight: 'bold' }}>Share this OTP with your driver:</Text>
+          <View style={{ marginTop: 15, padding: 12, backgroundColor: COLORS.cardBg, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }}>
+            <Text style={{ fontSize: 13, color: COLORS.textSecondary, fontWeight: 'bold' }}>Share this OTP with your driver:</Text>
             <Text style={styles.otp}>{String(ride.startOtp)}</Text>
           </View>
         ) : null}
 
-        {/* Cancel Button */}
         {(ride?.status === 'requested' || ride?.status === 'accepted') ? (
           <TouchableOpacity
             style={styles.cancelButton}
@@ -230,14 +221,16 @@ export default function LiveRideScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS.background },
   map: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  sheet: { backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5 },
-  status: { fontSize: 20, fontWeight: '800', marginBottom: 12, color: '#0A0F24' },
-  driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: '#0A0F24' },
-  driverInfo: { color: '#666', marginBottom: 4, fontSize: 14 },
-  otp: { marginTop: 4, fontSize: 28, color: '#1877F2', fontWeight: '900', letterSpacing: 4 },
-  cancelButton: { marginTop: 20, backgroundColor: '#E53935', padding: 16, borderRadius: 12, alignItems: 'center' },
-  cancelText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: COLORS.background },
+  sheet: { backgroundColor: COLORS.background, padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5 },
+  status: { fontSize: 20, fontWeight: '800', marginBottom: 12, color: COLORS.textPrimary },
+  driverName: { fontSize: 17, fontWeight: '700', marginBottom: 4, color: COLORS.textPrimary },
+  driverInfo: { color: COLORS.textSecondary, marginBottom: 4, fontSize: 14 },
+  otp: { marginTop: 4, fontSize: 28, color: COLORS.textPrimary, fontWeight: '900', letterSpacing: 4 },
+  cancelButton: { marginTop: 20, backgroundColor: COLORS.red, padding: 16, borderRadius: 12, alignItems: 'center' },
+  cancelText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
+  goHomeBtn: { marginTop: 20, backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
+  goHomeText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 16 },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { COLORS } from '../utils/theme';
 
 export default function AboutScreen() {
   return (
@@ -37,20 +38,20 @@ export default function AboutScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  logo: { fontSize: 30, fontWeight: '800', color: '#0A0F24', textAlign: 'center' },
-  logoAccent: { color: '#1877F2' },
-  tagline: { textAlign: 'center', color: '#888', marginTop: 4 },
-  version: { textAlign: 'center', color: '#bbb', fontSize: 12, marginTop: 6, marginBottom: 24 },
-  paragraph: { fontSize: 14, color: '#555', lineHeight: 21, marginBottom: 24 },
-  card: { backgroundColor: '#f2f4f7', borderRadius: 12, padding: 16, marginBottom: 20 },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: '#888', marginBottom: 6 },
-  link: { color: '#1877F2', fontWeight: '600', fontSize: 15 },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  logo: { fontSize: 30, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
+  logoAccent: { color: COLORS.primary },
+  tagline: { textAlign: 'center', color: COLORS.textSecondary, marginTop: 4 },
+  version: { textAlign: 'center', color: COLORS.textLight, fontSize: 12, marginTop: 6, marginBottom: 24 },
+  paragraph: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 21, marginBottom: 24 },
+  card: { backgroundColor: COLORS.cardBg, borderRadius: 12, padding: 16, marginBottom: 20 },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textLight, marginBottom: 6 },
+  link: { color: COLORS.blue, fontWeight: '600', fontSize: 15 },
   linkRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  linkRowText: { fontSize: 15, color: '#0A0F24' },
-  chevron: { color: '#bbb', fontSize: 18 },
-  footer: { textAlign: 'center', color: '#bbb', fontSize: 12, marginTop: 30 },
+  linkRowText: { fontSize: 15, color: COLORS.textPrimary },
+  chevron: { color: COLORS.textLight, fontSize: 18 },
+  footer: { textAlign: 'center', color: COLORS.textLight, fontSize: 12, marginTop: 30 },
 });
