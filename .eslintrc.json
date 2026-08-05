@@ -1,0 +1,27 @@
+{
+  "extends": "expo",
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true,
+    "react-native/react-native": true
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-undef": "off",
+    "import/namespace": "off"
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".json"]
+      }
+    }
+  }
+}
