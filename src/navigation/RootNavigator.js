@@ -1,9 +1,10 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { COLORS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 // Auth screens
 import SplashScreen from '../screens/auth/SplashScreen';
@@ -27,11 +28,28 @@ import AboutScreen from '../screens/AboutScreen';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 
-const Stack = createNativeStackNavigator();
+import BottomNav from '../components/BottomNav';
 
-// Shown when there is no logged-in user yet. Splash itself decides
-// (via the 'prinsgo_onboarded' flag) whether to continue to Onboarding
-// or straight to Login - that logic is unchanged.
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Create Bottom Tabs utilizing the customizable tabs or bottom sheet trigger
+function MainTabNavigator() {
+  const { colors } = useTheme();
+
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <BottomNav active={props.state.routes[props.state.index].name} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="History" component={HistoryScreen} />
+      <Tab.Screen name="Wallet" component={WalletScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
 function AuthStack() {
   return (
     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
@@ -43,21 +61,39 @@ function AuthStack() {
   );
 }
 
-// Shown once AuthContext has a logged-in user. Every screen the app
-// navigates to from Home/Profile/PlaceSearch/etc. is registered here.
+// Global configuration of Deep Linking
+const deepLinkingConfig = {
+  prefixes: ['prinsgo://', 'https://prinsgo.com', 'https://*.prinsgo.com'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Home: 'home',
+          History: 'bookings',
+          Wallet: 'wallet',
+          Profile: 'profile',
+        },
+      },
+      PlaceSearch: 'search',
+      VehicleSelect: 'vehicle-select',
+      LiveRide: 'ride/:rideId',
+      LiveParcel: 'parcel/:parcelId',
+      Settings: 'settings',
+      Notifications: 'notifications',
+    },
+  },
+};
+
 function MainStack() {
   return (
-    <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Navigator initialRouteName="MainTabs" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="PlaceSearch" component={PlaceSearchScreen} />
       <Stack.Screen name="VehicleSelect" component={VehicleSelectScreen} />
       <Stack.Screen name="LiveRide" component={LiveRideScreen} />
       <Stack.Screen name="RateRide" component={RateRideScreen} />
       <Stack.Screen name="ParcelDetails" component={ParcelDetailsScreen} />
       <Stack.Screen name="LiveParcel" component={LiveParcelScreen} />
-      <Stack.Screen name="Wallet" component={WalletScreen} />
-      <Stack.Screen name="History" component={HistoryScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
@@ -68,14 +104,19 @@ function MainStack() {
 
 export default function RootNavigator() {
   const { user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
-  return <NavigationContainer>{user ? <MainStack /> : <AuthStack />}</NavigationContainer>;
+  return (
+    <NavigationContainer linking={deepLinkingConfig}>
+      {user ? <MainStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
 }
