@@ -51,7 +51,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
       const res = await estimateFare(pLat, pLng, dLat, dLng);
       setEstimates(res?.data?.estimates || res?.estimates || []);
     } catch (error) {
-      console.log('FARE ERROR', error);
+      console.log('FARE ERROR', error?.message || 'Unable to calculate fare');
       Alert.alert('Error', 'Unable to calculate fare');
     } finally {
       setLoading(false);
@@ -98,7 +98,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
         rideId: rideId,
       });
     } catch (error) {
-      console.log('BOOK ERROR', error);
+      console.log('BOOK ERROR', error?.message || 'Something went wrong');
       Alert.alert('Booking Error', error?.message || 'Something went wrong');
     } finally {
       setBooking(false);
