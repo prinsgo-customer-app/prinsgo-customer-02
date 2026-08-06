@@ -82,10 +82,10 @@ export default function LiveRideScreen({ route, navigation }) {
       console.log("Socket Location Error:", e);
     }
 
-    const timer = setInterval(fetchRide, 5000);
+    const timer = window.setInterval(fetchRide, 5000);
 
     return () => {
-      clearInterval(timer);
+      window.clearInterval(timer);
       unsubscribe();
     };
   }, [fetchRide, rideId]);
