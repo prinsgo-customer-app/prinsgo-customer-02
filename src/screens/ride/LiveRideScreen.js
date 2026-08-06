@@ -63,8 +63,8 @@ export default function LiveRideScreen({ route, navigation }) {
     if (rideId) {
       try {
         joinRideRoom(rideId);
-      } catch (e) {
-        console.log("Socket Join Error:", e);
+      } catch (_e) {
+        console.log("Socket Join Error: Failed to join ride room");
       }
     }
 
@@ -78,8 +78,8 @@ export default function LiveRideScreen({ route, navigation }) {
           });
         }
       });
-    } catch (e) {
-      console.log("Socket Location Error:", e);
+    } catch (_e) {
+      console.log("Socket Location Error: Failed to setup location listener");
     }
 
     const timer = window.setInterval(fetchRide, 5000);
