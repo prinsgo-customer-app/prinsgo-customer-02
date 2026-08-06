@@ -73,10 +73,10 @@ export default function LiveParcelScreen({ route, navigation }) {
       // ignore
     }
 
-    const timer = setInterval(fetchParcel, 5000);
+    const timer = window.setInterval(fetchParcel, 5000);
 
     return () => {
-      clearInterval(timer);
+      window.clearInterval(timer);
       unsubscribe();
     };
   }, [fetchParcel, parcelId]);

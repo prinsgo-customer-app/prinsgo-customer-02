@@ -20,12 +20,12 @@ export default function PlaceSearchScreen({ route, navigation }) {
   let debounceTimer;
   const onChangeText = (text) => {
     setQuery(text);
-    clearTimeout(debounceTimer);
+    window.clearTimeout(debounceTimer);
     if (text.trim().length < 2) {
       setResults([]);
       return;
     }
-    debounceTimer = setTimeout(async () => {
+    debounceTimer = window.setTimeout(async () => {
       setLoading(true);
       try {
         const res = await searchPlaces(text, currentLocation?.lat, currentLocation?.lng);
