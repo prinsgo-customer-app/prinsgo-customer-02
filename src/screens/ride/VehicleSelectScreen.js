@@ -49,7 +49,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
 
     try {
       const res = await estimateFare(pLat, pLng, dLat, dLng);
-      setEstimates(res?.data?.estimates || res?.estimates || []);
+      setEstimates(res?.data?.estimates || /** @type {any} */ (res)?.estimates || []);
     } catch (error) {
       console.log('FARE ERROR', error);
       Alert.alert('Error', 'Unable to calculate fare');

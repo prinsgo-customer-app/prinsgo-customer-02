@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AccessibilityContext = createContext();
+const AccessibilityContext = createContext(null);
 
 export function AccessibilityProvider({ children }) {
   const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
