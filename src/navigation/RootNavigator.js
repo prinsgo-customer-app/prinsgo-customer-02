@@ -35,7 +35,7 @@ const Tab = createBottomTabNavigator();
 
 // Create Bottom Tabs utilizing the customizable tabs or bottom sheet trigger
 function MainTabNavigator() {
-  const { colors } = useTheme();
+
 
   return (
     <Tab.Navigator
@@ -62,6 +62,8 @@ function AuthStack() {
 }
 
 // Global configuration of Deep Linking
+
+/** @type {import('@react-navigation/native').LinkingOptions<{}>} */
 const deepLinkingConfig = {
   prefixes: ['prinsgo://', 'https://prinsgo.com', 'https://*.prinsgo.com'],
   config: {
@@ -105,6 +107,7 @@ function MainStack() {
 export default function RootNavigator() {
   const { user, loading } = useAuth();
   const { colors } = useTheme();
+
 
   if (loading) {
     return (

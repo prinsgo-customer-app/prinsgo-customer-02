@@ -39,7 +39,8 @@ export default function LiveRideScreen({ route, navigation }) {
     
     try {
       const res = await getRideById(rideId);
-      const fetchedRide = res?.data?.ride || res?.ride;
+      const data = res;
+      const fetchedRide = data?.data?.ride || data?.ride;
 
       if (fetchedRide) {
         setRide(fetchedRide);

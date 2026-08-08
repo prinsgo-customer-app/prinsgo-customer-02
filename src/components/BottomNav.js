@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocalization } from '../context/LocalizationContext';
 
@@ -13,7 +13,7 @@ const TABS = [
 ];
 
 export default function BottomNav({ active }) {
-  const navigation = useNavigation();
+  const navigation =  (useNavigation());
   const { colors } = useTheme();
   const { t } = useLocalization();
 

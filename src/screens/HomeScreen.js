@@ -19,7 +19,7 @@ import { getActiveParcels } from '../api/parcels';
 import { getBanners, getToggles } from '../api/auth';
 import BottomNav from '../components/BottomNav';
 import AnimatedCard from '../components/AnimatedCard';
-import AnimatedButton from '../components/AnimatedButton';
+
 
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
 
@@ -361,7 +361,7 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             {recentBookings.map((ride, idx) => (
-              <AnimatedCard key={ride._id} delay={idx * 100} style={{ padding: 14 }}>
+              <AnimatedCard key={ride._id} delay={idx * 100} style={{ padding: 14 }} onPress={() => navigation.navigate('History')}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Text style={styles.recentIcon}>{VEHICLE_ICONS[ride.vehicleType] || '🚗'}</Text>
                   <View style={{ flex: 1 }}>
