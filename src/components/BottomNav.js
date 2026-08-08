@@ -13,7 +13,7 @@ const TABS = [
 ];
 
 export default function BottomNav({ active }) {
-  const navigation = /** @type {any} */ (useNavigation());
+  const navigation =  (useNavigation());
   const { colors } = useTheme();
   const { t } = useLocalization();
 

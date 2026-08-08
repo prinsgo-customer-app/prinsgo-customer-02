@@ -62,8 +62,9 @@ function AuthStack() {
 }
 
 // Global configuration of Deep Linking
-/** @type {any} */
-const deepLinkingConfig = ({
+
+/** @type {import('@react-navigation/native').LinkingOptions<{}>} */
+const deepLinkingConfig = {
   prefixes: ['prinsgo://', 'https://prinsgo.com', 'https://*.prinsgo.com'],
   config: {
     screens: {
@@ -83,7 +84,7 @@ const deepLinkingConfig = ({
       Notifications: 'notifications',
     },
   },
-});
+};
 
 function MainStack() {
   return (

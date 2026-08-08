@@ -39,7 +39,7 @@ export default function LiveRideScreen({ route, navigation }) {
     
     try {
       const res = await getRideById(rideId);
-      const data = /** @type {{ data?: { ride?: any }, ride?: any }} */ (res);
+      const data = res;
       const fetchedRide = data?.data?.ride || data?.ride;
 
       if (fetchedRide) {

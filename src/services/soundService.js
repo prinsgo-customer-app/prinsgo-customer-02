@@ -52,7 +52,7 @@ export async function playSound(soundKey) {
 
     // Automatically unload sound after playing to prevent memory leaks
     sound.setOnPlaybackStatusUpdate((status) => {
-      if (/** @type {any} */ (status).didJustFinish) {
+      if ( (status).didJustFinish) {
         sound.unloadAsync();
       }
     });
