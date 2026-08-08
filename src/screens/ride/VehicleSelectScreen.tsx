@@ -49,7 +49,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
 
     try {
       const res = await estimateFare(pLat, pLng, dLat, dLng);
-      setEstimates(res?.data?.estimates || res?.estimates || []);
+      setEstimates((res as any)?.data?.estimates as any || (res as any)?.estimates as any || []);
     } catch (error) {
       console.log('FARE ERROR', error);
       Alert.alert('Error', 'Unable to calculate fare');
@@ -90,7 +90,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
       const rideId = res?.data?.ride?._id;
 
       if (!rideId) {
-        Alert.alert('Booking Failed', res?.data?.message || 'Ride ID not received from server');
+        Alert.alert('Booking Failed', (res?.data as any)?.message || 'Ride ID not received from server');
         return;
       }
 
@@ -99,7 +99,7 @@ export default function VehicleSelectScreen({ route, navigation }) {
       });
     } catch (error) {
       console.log('BOOK ERROR', error);
-      Alert.alert('Booking Error', error?.message || 'Something went wrong');
+      Alert.alert('Booking Error', (error as any)?.message || 'Something went wrong');
     } finally {
       setBooking(false);
     }
@@ -119,30 +119,30 @@ export default function VehicleSelectScreen({ route, navigation }) {
       <Text style={styles.title}>Choose Your Ride</Text>
 
       <FlatList
-        data={estimates}
-        keyExtractor={(item) => item.vehicleType}
+        data={estimates as any}
+        keyExtractor={(item) => item.vehicleType as any}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[
               styles.card,
-              selected === item.vehicleType && styles.selected,
+              selected === item.vehicleType as any && styles.selected,
             ]}
-            onPress={() => setSelected(item.vehicleType)}
+            onPress={() => setSelected(item.vehicleType as any)}
           >
             <Text style={styles.icon}>
-              {VEHICLE_LABELS[item.vehicleType]?.icon || '🚕'}
+              {VEHICLE_LABELS[item.vehicleType as any]?.icon || '🚕'}
             </Text>
 
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>
-                {VEHICLE_LABELS[item.vehicleType]?.label || item.vehicleType}
+                {VEHICLE_LABELS[item.vehicleType as any]?.label || item.vehicleType as any}
               </Text>
 
-              <Text style={styles.duration}>{item.durationMin || 0} min</Text>
+              <Text style={styles.duration}>{item.durationMin as any || 0} min</Text>
             </View>
 
             <Text style={styles.price}>
-              ₹{Math.round(item.totalFare || 0)}
+              ₹{Math.round(item.totalFare as any || 0)}
             </Text>
           </TouchableOpacity>
         )}

@@ -115,7 +115,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer linking={deepLinkingConfig}>
+    <NavigationContainer linking={deepLinkingConfig as any}>
       {user ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );

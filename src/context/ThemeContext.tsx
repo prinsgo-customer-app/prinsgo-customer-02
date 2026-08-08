@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../utils/theme';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext<any>(null);
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
@@ -18,7 +18,7 @@ export function ThemeProvider({ children }) {
         if (savedMode) {
           setThemeMode(savedMode);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading theme preference:', err);
       }
     }
@@ -38,7 +38,7 @@ export function ThemeProvider({ children }) {
     try {
       setThemeMode(mode);
       await AsyncStorage.setItem('prinsgo_theme_mode', mode);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving theme preference:', err);
     }
   };

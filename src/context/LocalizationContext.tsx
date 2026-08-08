@@ -56,7 +56,7 @@ const TRANSLATIONS = {
   },
 };
 
-const LocalizationContext = createContext();
+const LocalizationContext = createContext<any>(null);
 
 export function LocalizationProvider({ children }) {
   const [locale, setLocale] = useState('en');
@@ -68,7 +68,7 @@ export function LocalizationProvider({ children }) {
         if (savedLocale && TRANSLATIONS[savedLocale]) {
           setLocale(savedLocale);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading saved locale:', err);
       }
     }
@@ -80,7 +80,7 @@ export function LocalizationProvider({ children }) {
     try {
       setLocale(newLocale);
       await AsyncStorage.setItem('prinsgo_locale', newLocale);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving locale:', err);
     }
   };

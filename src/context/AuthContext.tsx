@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMe } from '../api/auth';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext<any>({});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         const res = await getMe();
         setUser(res.data.user);
       }
-    } catch (err) {
+    } catch (err: any) {
       await AsyncStorage.removeItem('prinsgo_token');
       setUser(null);
     } finally {

@@ -1,4 +1,4 @@
-export const COLORS = {
+export const COLORS: any = {
   light: {
     primary: '#FFC72C',      // Premium Yellow Accent
     background: '#FFFFFF',   // White Background
@@ -37,7 +37,7 @@ export const COLORS = {
   }
 };
 
-export const FONTS = {
+export const FONTS: any = {
   bold: 'System',
   semiBold: 'System',
   regular: 'System',

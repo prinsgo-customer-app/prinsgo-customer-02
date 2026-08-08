@@ -12,7 +12,7 @@ export async function requestLocationPermission() {
       return false;
     }
     return true;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error requesting location permission:', err);
     return false;
   }
@@ -22,7 +22,7 @@ export async function checkLocationPermission() {
   try {
     const { status } = await Location.getForegroundPermissionsAsync();
     return status === 'granted';
-  } catch (err) {
+  } catch (err: any) {
     return false;
   }
 }

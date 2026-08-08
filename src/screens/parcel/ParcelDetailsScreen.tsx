@@ -50,7 +50,7 @@ export default function ParcelDetailsScreen({ route, navigation }) {
   const [weightCategory, setWeightCategory] = useState('upto_1kg');
   const [paymentMethod, setPaymentMethod] = useState('cash');
 
-  const [estimate, setEstimate] = useState(null);
+  const [estimate, setEstimate] = useState<any>(null);
   const [estimating, setEstimating] = useState(true);
   const [booking, setBooking] = useState(false);
 
@@ -76,8 +76,8 @@ export default function ParcelDetailsScreen({ route, navigation }) {
         weightCategory,
       });
       setEstimate(res?.data || null);
-    } catch (err) {
-      Alert.alert('Error', err.message || 'Unable to calculate parcel charge');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Unable to calculate parcel charge');
     } finally {
       setEstimating(false);
     }
@@ -122,8 +122,8 @@ export default function ParcelDetailsScreen({ route, navigation }) {
       }
 
       navigation.replace('LiveParcel', { parcelId });
-    } catch (err) {
-      Alert.alert('Booking Error', err.message || 'Something went wrong');
+    } catch (err: any) {
+      Alert.alert('Booking Error', err?.message || 'Something went wrong');
     } finally {
       setBooking(false);
     }

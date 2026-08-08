@@ -25,8 +25,8 @@ export default function LiveParcelScreen({ route, navigation }) {
   const params = route?.params || {};
   const parcelId = params.parcelId || params.id || null;
 
-  const [parcel, setParcel] = useState(null);
-  const [driverLocation, setDriverLocation] = useState(null);
+  const [parcel, setParcel] = useState<any>(null);
+  const [driverLocation, setDriverLocation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -44,7 +44,7 @@ export default function LiveParcelScreen({ route, navigation }) {
       } else {
         setErrorMsg('Parcel data not found on server.');
       }
-    } catch (err) {
+    } catch (err: any) {
       setErrorMsg(err?.message || 'Failed to fetch parcel');
     } finally {
       setLoading(false);
@@ -57,7 +57,7 @@ export default function LiveParcelScreen({ route, navigation }) {
     if (parcelId) {
       try {
         joinParcelRoom(parcelId);
-      } catch (e) {
+      } catch (e: any) {
         // ignore
       }
     }
@@ -69,14 +69,14 @@ export default function LiveParcelScreen({ route, navigation }) {
           setDriverLocation({ lat: Number(location.lat), lng: Number(location.lng) });
         }
       });
-    } catch (e) {
+    } catch (e: any) {
       // ignore
     }
 
-    const timer = window.setInterval(fetchParcel, 5000);
+    const timer = setInterval(fetchParcel, 5000);
 
     return () => {
-      window.clearInterval(timer);
+      clearInterval(timer);
       unsubscribe();
     };
   }, [fetchParcel, parcelId]);
@@ -185,7 +185,7 @@ export default function LiveParcelScreen({ route, navigation }) {
                     try {
                       await cancelParcel(parcelId, 'Cancelled by customer');
                       navigation.replace('Home');
-                    } catch (e) {
+                    } catch (e: any) {
                       Alert.alert('Error', e?.message || 'Failed to cancel');
                     }
                   },

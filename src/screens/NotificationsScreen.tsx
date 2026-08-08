@@ -12,7 +12,7 @@ import { getNotifications } from '../api/auth';
 import { COLORS } from '../utils/theme';
 
 export default function NotificationsScreen({ navigation }) {
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -20,7 +20,7 @@ export default function NotificationsScreen({ navigation }) {
     try {
       const res = await getNotifications();
       setNotifications(res.data?.notifications || []);
-    } catch (err) {
+    } catch (err: any) {
       // ignore
     } finally {
       setLoading(false);

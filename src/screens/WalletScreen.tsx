@@ -25,12 +25,12 @@ const REASON_LABELS = {
 
 export default function WalletScreen() {
   const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Bank/UPI details from Admin Settings
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState<any>(null);
   const [showAddFunds, setShowAddFunds] = useState(false);
 
   const load = useCallback(async () => {
@@ -42,7 +42,7 @@ export default function WalletScreen() {
       setBalance(txRes.data.walletBalance);
       setTransactions(txRes.data.transactions);
       setSettings(settingsRes.data.settings);
-    } catch (err) {
+    } catch (err: any) {
       // ignore, show empty state
     } finally {
       setLoading(false);

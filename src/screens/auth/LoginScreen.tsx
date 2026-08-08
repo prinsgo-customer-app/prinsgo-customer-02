@@ -24,8 +24,8 @@ export default function LoginScreen({ navigation }) {
     try {
       await sendOtp(phone);
       navigation.navigate('Otp', { phone });
-    } catch (err) {
-      Alert.alert('Error', err.message);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message);
     } finally {
       setLoading(false);
     }

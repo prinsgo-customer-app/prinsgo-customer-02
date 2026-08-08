@@ -30,14 +30,14 @@ export default function HomeScreen({ navigation }) {
   const { fontSizeMultiplier } = useAccessibility();
 
   const [mode, setMode] = useState('ride');
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [locationLoading, setLocationLoading] = useState(true);
-  const [locationError, setLocationError] = useState(null);
+  const [locationError, setLocationError] = useState<any>(null);
   const [checkingActive, setCheckingActive] = useState(true);
-  const [recentBookings, setRecentBookings] = useState([]);
+  const [recentBookings, setRecentBookings] = useState<any>([]);
 
   // Admin dynamic integrations
-  const [banners, setBanners] = useState([]);
+  const [banners, setBanners] = useState<any>([]);
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }) {
         }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
         setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      } catch (err) {
+      } catch (err: any) {
         setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
       } finally {
         setLocationLoading(false);
@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }) {
         navigation.replace('LiveParcel', { parcelId: parcelRes.data.parcels[0]._id });
         return;
       }
-    } catch (err) {
+    } catch (err: any) {
       // ignore
     } finally {
       setCheckingActive(false);
@@ -86,7 +86,7 @@ export default function HomeScreen({ navigation }) {
     try {
       const res = await getRideHistory(1, 3);
       setRecentBookings(res.data?.rides || []);
-    } catch (err) {
+    } catch (err: any) {
       // ignore
     }
   };
@@ -115,7 +115,7 @@ export default function HomeScreen({ navigation }) {
       if (rideToggle && !rideToggle.isEnabled && parcelToggle?.isEnabled) {
         setMode('parcel');
       }
-    } catch (err) {
+    } catch (err: any) {
       // ignore configuration fetch errors
     }
   };
@@ -131,7 +131,7 @@ export default function HomeScreen({ navigation }) {
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-    } catch (err) {
+    } catch (err: any) {
       setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
     } finally {
       setLocationLoading(false);
@@ -361,7 +361,7 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             {recentBookings.map((ride, idx) => (
-              <AnimatedCard key={ride._id} delay={idx * 100} style={{ padding: 14 }}>
+              <AnimatedCard key={ride._id} delay={idx * 100} onPress={() => {}} style={{ padding: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Text style={styles.recentIcon}>{VEHICLE_ICONS[ride.vehicleType] || '🚗'}</Text>
                   <View style={{ flex: 1 }}>

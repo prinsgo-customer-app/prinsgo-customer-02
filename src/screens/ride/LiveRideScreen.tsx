@@ -25,8 +25,8 @@ export default function LiveRideScreen({ route, navigation }) {
   const params = route?.params || {};
   const rideId = params.rideId || params.id || null;
 
-  const [ride, setRide] = useState(null);
-  const [driverLocation, setDriverLocation] = useState(null);
+  const [ride, setRide] = useState<any>(null);
+  const [driverLocation, setDriverLocation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -39,7 +39,7 @@ export default function LiveRideScreen({ route, navigation }) {
     
     try {
       const res = await getRideById(rideId);
-      const fetchedRide = res?.data?.ride || res?.ride;
+      const fetchedRide = (res?.data as any)?.ride || (res as any)?.ride;
 
       if (fetchedRide) {
         setRide(fetchedRide);
@@ -49,7 +49,7 @@ export default function LiveRideScreen({ route, navigation }) {
       } else {
         setErrorMsg("Ride data not found on server.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.log("LiveRide Fetch Error:", err);
       setErrorMsg(err?.response?.data?.message || err?.message || "Failed to fetch ride");
     } finally {
@@ -63,7 +63,7 @@ export default function LiveRideScreen({ route, navigation }) {
     if (rideId) {
       try {
         joinRideRoom(rideId);
-      } catch (e) {
+      } catch (e: any) {
         console.log("Socket Join Error:", e);
       }
     }
@@ -78,14 +78,14 @@ export default function LiveRideScreen({ route, navigation }) {
           });
         }
       });
-    } catch (e) {
+    } catch (e: any) {
       console.log("Socket Location Error:", e);
     }
 
-    const timer = window.setInterval(fetchRide, 5000);
+    const timer = setInterval(fetchRide, 5000);
 
     return () => {
-      window.clearInterval(timer);
+      clearInterval(timer);
       unsubscribe();
     };
   }, [fetchRide, rideId]);
@@ -203,7 +203,7 @@ export default function LiveRideScreen({ route, navigation }) {
                       try {
                         await cancelRide(rideId, "Cancelled by customer");
                         navigation.replace("Home");
-                      } catch (e) {
+                      } catch (e: any) {
                         Alert.alert("Error", e?.response?.data?.message || e.message);
                       }
                     },

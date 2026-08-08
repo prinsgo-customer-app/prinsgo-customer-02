@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
-import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
+import { printRideInvoice, printParcelInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
 import { COLORS } from '../utils/theme';
 
@@ -23,7 +23,7 @@ const STATUS_COLORS = {
 
 export default function HistoryScreen({ route }) {
   const [tab, setTab] = useState(route?.params?.initialTab || 'rides');
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
@@ -37,7 +37,7 @@ export default function HistoryScreen({ route }) {
         const res = await getParcelHistory(1, 30);
         setItems(res.data.parcels || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       setItems([]);
     } finally {
       setLoading(false);
@@ -59,11 +59,11 @@ export default function HistoryScreen({ route }) {
     setDownloadingId(item._id);
     try {
       if (tab === 'rides') {
-        await generateRideInvoice(item);
+        await printRideInvoice(item);
       } else {
-        await generateParcelInvoice(item);
+        await printParcelInvoice(item);
       }
-    } catch (err) {
+    } catch (err: any) {
       Alert.alert('Error', "Couldn't generate invoice. Please try again.");
     } finally {
       setDownloadingId(null);

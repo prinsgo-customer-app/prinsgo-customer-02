@@ -12,8 +12,8 @@ export default function RateRideScreen({ route, navigation }) {
     try {
       await rateRide(rideId, rating, review);
       navigation.replace('Home');
-    } catch (err) {
-      Alert.alert('Error', err.message);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message);
     }
   };
 
