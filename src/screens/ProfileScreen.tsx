@@ -44,7 +44,7 @@ export default function ProfileScreen({ navigation }) {
         setSupportPhone(settings.supportPhone || '');
         setSupportEmail(settings.supportEmail || '');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSupportPhone('9999999999');
       setSupportEmail('support@prinsgo.com');
     }
@@ -56,8 +56,8 @@ export default function ProfileScreen({ navigation }) {
       await updateProfile({ name, email: email || undefined });
       await refreshUser();
       setEditing(false);
-    } catch (err: any) {
-      Alert.alert('Error', err?.message);
+    } catch (err: unknown) {
+      Alert.alert('Error', (err as any)?.message);
     } finally {
       setSaving(false);
     }
@@ -74,8 +74,8 @@ export default function ProfileScreen({ navigation }) {
       await refreshUser();
       setNewAddress('');
       setShowAddForm(false);
-    } catch (err: any) {
-      Alert.alert('Error', err?.message);
+    } catch (err: unknown) {
+      Alert.alert('Error', (err as any)?.message);
     } finally {
       setAddingAddress(false);
     }
@@ -91,8 +91,8 @@ export default function ProfileScreen({ navigation }) {
           try {
             await deleteAddress(addressId);
             await refreshUser();
-          } catch (err: any) {
-            Alert.alert('Error', err?.message);
+          } catch (err: unknown) {
+            Alert.alert('Error', (err as any)?.message);
           }
         },
       },

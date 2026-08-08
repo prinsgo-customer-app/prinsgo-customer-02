@@ -39,7 +39,7 @@ export default function LiveRideScreen({ route, navigation }) {
     
     try {
       const res = await getRideById(rideId);
-      const fetchedRide = (res?.data as any)?.ride || (res as any)?.ride;
+      const fetchedRide = res?.data?.ride || res?.data?.ride;
 
       if (fetchedRide) {
         setRide(fetchedRide);
@@ -49,9 +49,9 @@ export default function LiveRideScreen({ route, navigation }) {
       } else {
         setErrorMsg("Ride data not found on server.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log("LiveRide Fetch Error:", err);
-      setErrorMsg(err?.response?.data?.message || err?.message || "Failed to fetch ride");
+      setErrorMsg((err as any)?.response?.data?.message || (err as any)?.message || "Failed to fetch ride");
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function LiveRideScreen({ route, navigation }) {
     if (rideId) {
       try {
         joinRideRoom(rideId);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.log("Socket Join Error:", e);
       }
     }
@@ -78,7 +78,7 @@ export default function LiveRideScreen({ route, navigation }) {
           });
         }
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.log("Socket Location Error:", e);
     }
 
@@ -203,8 +203,8 @@ export default function LiveRideScreen({ route, navigation }) {
                       try {
                         await cancelRide(rideId, "Cancelled by customer");
                         navigation.replace("Home");
-                      } catch (e: any) {
-                        Alert.alert("Error", e?.response?.data?.message || e.message);
+                      } catch (e: unknown) {
+                        Alert.alert("Error", (e as any)?.response?.data?.message || (e as any).message);
                       }
                     },
                   },

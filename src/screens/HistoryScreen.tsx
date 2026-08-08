@@ -23,10 +23,10 @@ const STATUS_COLORS = {
 
 export default function HistoryScreen({ route }) {
   const [tab, setTab] = useState(route?.params?.initialTab || 'rides');
-  const [items, setItems] = useState<any>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState<any>(null);
 
   const load = useCallback(async (mode) => {
     try {
@@ -37,7 +37,7 @@ export default function HistoryScreen({ route }) {
         const res = await getParcelHistory(1, 30);
         setItems(res.data.parcels || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setItems([]);
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ export default function HistoryScreen({ route }) {
       } else {
         await printParcelInvoice(item);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert('Error', "Couldn't generate invoice. Please try again.");
     } finally {
       setDownloadingId(null);

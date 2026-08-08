@@ -9,7 +9,7 @@ export async function initHapticService() {
     if (value !== null) {
       isHapticsEnabled = value === 'true';
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to init haptic service settings:', err);
   }
 }
@@ -18,7 +18,7 @@ export async function setHapticsEnabled(enabled) {
   try {
     isHapticsEnabled = enabled;
     await AsyncStorage.setItem('prinsgo_haptics_enabled', String(enabled));
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save haptic setting:', err);
   }
 }
@@ -54,7 +54,7 @@ export async function triggerHaptic(type = 'light') {
         await Haptics.selectionAsync();
         break;
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Fail silently in environments that don't support haptic feedback
   }
 }

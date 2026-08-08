@@ -20,7 +20,7 @@ export async function initSoundService() {
     if (value !== null) {
       isSoundEnabled = value === 'true';
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to init sound service settings:', err);
   }
 }
@@ -29,7 +29,7 @@ export async function setSoundEnabled(enabled) {
   try {
     isSoundEnabled = enabled;
     await AsyncStorage.setItem('prinsgo_sound_enabled', String(enabled));
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save sound setting:', err);
   }
 }
@@ -56,7 +56,7 @@ export async function playSound(soundKey) {
         sound.unloadAsync();
       }
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Fail silently so as to not disrupt the main user flow
     console.warn('Sound playback failed or was muted by silent mode:', err);
   }

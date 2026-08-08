@@ -5,7 +5,7 @@ import { getMe } from '../api/auth';
 const AuthContext = createContext<any>({});
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const loadSession = async () => {
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         const res = await getMe();
         setUser(res.data.user);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       await AsyncStorage.removeItem('prinsgo_token');
       setUser(null);
     } finally {

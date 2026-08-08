@@ -34,10 +34,10 @@ export default function HomeScreen({ navigation }) {
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<any>(null);
   const [checkingActive, setCheckingActive] = useState(true);
-  const [recentBookings, setRecentBookings] = useState<any>([]);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
 
   // Admin dynamic integrations
-  const [banners, setBanners] = useState<any>([]);
+  const [banners, setBanners] = useState<any[]>([]);
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }) {
         }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
         setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      } catch (err: any) {
+      } catch (err: unknown) {
         setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
       } finally {
         setLocationLoading(false);
@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }) {
         navigation.replace('LiveParcel', { parcelId: parcelRes.data.parcels[0]._id });
         return;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // ignore
     } finally {
       setCheckingActive(false);
@@ -86,7 +86,7 @@ export default function HomeScreen({ navigation }) {
     try {
       const res = await getRideHistory(1, 3);
       setRecentBookings(res.data?.rides || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // ignore
     }
   };
@@ -115,7 +115,7 @@ export default function HomeScreen({ navigation }) {
       if (rideToggle && !rideToggle.isEnabled && parcelToggle?.isEnabled) {
         setMode('parcel');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // ignore configuration fetch errors
     }
   };
@@ -131,7 +131,7 @@ export default function HomeScreen({ navigation }) {
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLocationError("Couldn't get your location. Make sure GPS is on and try again.");
     } finally {
       setLocationLoading(false);

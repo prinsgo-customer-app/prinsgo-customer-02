@@ -32,7 +32,7 @@ export function AccessibilityProvider({ children }) {
         if (storedContrast) setHighContrast(storedContrast === 'true');
         if (storedScale) setFontSizeMultiplier(parseFloat(storedScale));
         if (storedMotion) setReduceMotion(storedMotion === 'true');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load accessibility config:', err);
       }
     }
@@ -50,7 +50,7 @@ export function AccessibilityProvider({ children }) {
       const newVal = !highContrast;
       setHighContrast(newVal);
       await AsyncStorage.setItem('prinsgo_accessibility_contrast', String(newVal));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
     }
   };
@@ -59,7 +59,7 @@ export function AccessibilityProvider({ children }) {
     try {
       setFontSizeMultiplier(val);
       await AsyncStorage.setItem('prinsgo_accessibility_scale', String(val));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
     }
   };
@@ -69,7 +69,7 @@ export function AccessibilityProvider({ children }) {
       const newVal = !reduceMotion;
       setReduceMotion(newVal);
       await AsyncStorage.setItem('prinsgo_accessibility_motion', String(newVal));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
     }
   };

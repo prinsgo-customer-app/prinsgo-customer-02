@@ -18,7 +18,7 @@ export function ThemeProvider({ children }) {
         if (savedMode) {
           setThemeMode(savedMode);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading theme preference:', err);
       }
     }
@@ -38,7 +38,7 @@ export function ThemeProvider({ children }) {
     try {
       setThemeMode(mode);
       await AsyncStorage.setItem('prinsgo_theme_mode', mode);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving theme preference:', err);
     }
   };

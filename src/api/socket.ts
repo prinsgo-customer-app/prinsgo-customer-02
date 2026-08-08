@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from './config';
 
-let socket: any = null;
+let socket: ReturnType<typeof io> | null = null;
 
 export const getSocket = () => {
   if (!socket) {

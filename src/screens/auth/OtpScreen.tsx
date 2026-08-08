@@ -34,11 +34,11 @@ export default function OtpScreen({ route }) {
       const res = await verifyOtp(phone, code, name || undefined);
       const { token, user } = res.data;
       await login(token, user);
-    } catch (err: any) {
-      if (err?.response?.data?.isNewUser) {
+    } catch (err: unknown) {
+      if ((err as any)?.response?.data?.isNewUser) {
         setNeedsName(true);
       } else {
-        Alert.alert('Error', err?.message);
+        Alert.alert('Error', (err as any)?.message);
       }
     } finally {
       setLoading(false);
@@ -49,8 +49,8 @@ export default function OtpScreen({ route }) {
     try {
       await sendOtp(phone);
       Alert.alert('OTP sent', 'A new OTP has been sent to your phone');
-    } catch (err: any) {
-      Alert.alert('Error', err?.message);
+    } catch (err: unknown) {
+      Alert.alert('Error', (err as any)?.message);
     }
   };
 

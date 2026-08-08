@@ -20,7 +20,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const message =
-      error?.response?.data?.message || error?.message || 'Something went wrong';
+      error?.response?.data?.message || (error as any)?.message || 'Something went wrong';
     return Promise.reject({ ...error, message });
   }
 );

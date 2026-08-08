@@ -37,7 +37,7 @@ export const COLORS: any = {
   }
 };
 
-export const FONTS: any = {
+export const FONTS = {
   bold: 'System',
   semiBold: 'System',
   regular: 'System',

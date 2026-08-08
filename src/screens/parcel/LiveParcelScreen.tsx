@@ -44,8 +44,8 @@ export default function LiveParcelScreen({ route, navigation }) {
       } else {
         setErrorMsg('Parcel data not found on server.');
       }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to fetch parcel');
+    } catch (err: unknown) {
+      setErrorMsg((err as any)?.message || 'Failed to fetch parcel');
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function LiveParcelScreen({ route, navigation }) {
     if (parcelId) {
       try {
         joinParcelRoom(parcelId);
-      } catch (e: any) {
+      } catch (e: unknown) {
         // ignore
       }
     }
@@ -69,7 +69,7 @@ export default function LiveParcelScreen({ route, navigation }) {
           setDriverLocation({ lat: Number(location.lat), lng: Number(location.lng) });
         }
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // ignore
     }
 
@@ -185,8 +185,8 @@ export default function LiveParcelScreen({ route, navigation }) {
                     try {
                       await cancelParcel(parcelId, 'Cancelled by customer');
                       navigation.replace('Home');
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message || 'Failed to cancel');
+                    } catch (e: unknown) {
+                      Alert.alert('Error', (e as any)?.message || 'Failed to cancel');
                     }
                   },
                 },

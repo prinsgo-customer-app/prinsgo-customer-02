@@ -76,8 +76,8 @@ export default function ParcelDetailsScreen({ route, navigation }) {
         weightCategory,
       });
       setEstimate(res?.data || null);
-    } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Unable to calculate parcel charge');
+    } catch (err: unknown) {
+      Alert.alert('Error', (err as any)?.message || 'Unable to calculate parcel charge');
     } finally {
       setEstimating(false);
     }
@@ -122,8 +122,8 @@ export default function ParcelDetailsScreen({ route, navigation }) {
       }
 
       navigation.replace('LiveParcel', { parcelId });
-    } catch (err: any) {
-      Alert.alert('Booking Error', err?.message || 'Something went wrong');
+    } catch (err: unknown) {
+      Alert.alert('Booking Error', (err as any)?.message || 'Something went wrong');
     } finally {
       setBooking(false);
     }

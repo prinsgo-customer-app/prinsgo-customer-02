@@ -68,7 +68,7 @@ export function LocalizationProvider({ children }) {
         if (savedLocale && TRANSLATIONS[savedLocale]) {
           setLocale(savedLocale);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading saved locale:', err);
       }
     }
@@ -80,7 +80,7 @@ export function LocalizationProvider({ children }) {
     try {
       setLocale(newLocale);
       await AsyncStorage.setItem('prinsgo_locale', newLocale);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving locale:', err);
     }
   };

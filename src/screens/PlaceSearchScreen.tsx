@@ -14,7 +14,7 @@ import { COLORS } from '../utils/theme';
 export default function PlaceSearchScreen({ route, navigation }) {
   const { mode, currentLocation } = route.params;
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   let debounceTimer;
@@ -30,7 +30,7 @@ export default function PlaceSearchScreen({ route, navigation }) {
       try {
         const res = await searchPlaces(text, currentLocation?.lat, currentLocation?.lng);
         setResults(res.data.predictions || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setResults([]);
       } finally {
         setLoading(false);
@@ -51,7 +51,7 @@ export default function PlaceSearchScreen({ route, navigation }) {
       } else {
         navigation.replace('ParcelDetails', { pickup: currentLocation, drop });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // ignore
     }
   };
