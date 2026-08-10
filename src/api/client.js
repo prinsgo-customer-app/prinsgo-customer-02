@@ -19,6 +19,9 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error?.response?.status === 401) {
+      AsyncStorage.removeItem('prinsgo_token');
+    }
     const message =
       error?.response?.data?.message || error?.message || 'Something went wrong';
     return Promise.reject({ ...error, message });

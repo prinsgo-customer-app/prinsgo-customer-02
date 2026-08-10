@@ -20,5 +20,5 @@ export const joinParcelRoom = (parcelId) => {
 
 export const onDriverLocation = (callback) => {
   getSocket().on('driver_location', callback);
-  return () => getSocket().off('driver_location', callback);
+  return () => { getSocket().off('driver_location', callback); };
 };

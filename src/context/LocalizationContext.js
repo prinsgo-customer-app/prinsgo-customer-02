@@ -56,7 +56,7 @@ const TRANSLATIONS = {
   },
 };
 
-const LocalizationContext = createContext();
+const LocalizationContext = createContext(null);
 
 export function LocalizationProvider({ children }) {
   const [locale, setLocale] = useState('en');
