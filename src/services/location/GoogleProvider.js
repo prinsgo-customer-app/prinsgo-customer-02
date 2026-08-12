@@ -1,5 +1,9 @@
 import LocationProvider from './LocationProvider';
-import { searchPlaces as searchApi, reverseGeocode as revGeocodeApi, placeDetails as detailsApi } from '../../api/places';
+import {
+  getGooglePlacesSearch,
+  getGooglePlacesReverse,
+  getGooglePlacesDetails,
+} from '../../api/googlePlaces';
 
 export default class GoogleProvider extends LocationProvider {
   async getCurrentLocation() {
@@ -8,7 +12,7 @@ export default class GoogleProvider extends LocationProvider {
   }
 
   async search(query, lat, lng) {
-    const res = await searchApi(query, lat, lng);
+    const res = await getGooglePlacesSearch(query, lat, lng);
     const predictions = res.data?.predictions || [];
     return predictions.map((item) => ({
       placeId: item.placeId || item.place_id,
@@ -18,7 +22,7 @@ export default class GoogleProvider extends LocationProvider {
   }
 
   async reverseGeocode(lat, lng) {
-    const res = await revGeocodeApi(lat, lng);
+    const res = await getGooglePlacesReverse(lat, lng);
     return {
       address: res.data?.address,
       lat: res.data?.lat || lat,
@@ -37,7 +41,7 @@ export default class GoogleProvider extends LocationProvider {
   }
 
   async getDetails(placeId) {
-    const res = await detailsApi(placeId);
+    const res = await getGooglePlacesDetails(placeId);
     return {
       address: res.data?.address,
       lat: res.data?.lat,

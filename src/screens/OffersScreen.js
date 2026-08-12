@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Share,
-  Clipboard,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useAuth } from '../context/AuthContext';
