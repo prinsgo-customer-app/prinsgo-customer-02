@@ -3,9 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let isSoundEnabled = true;
 
-// Preload sound files or references
-// Note: We use public domain, tiny sound file URLs or placeholders to prevent large bundle sizes,
-// but since the requirement is to use lightweight sound assets, we can define short audio effects.
 const SOUNDS = {
   ride_alert: 'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg',
   parcel_shipped: 'https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_drum_roll.ogg',
@@ -44,16 +41,25 @@ export async function playSound(soundKey) {
     const soundUrl = SOUNDS[soundKey];
     if (!soundUrl) return;
 
-    // Request playing audio using expo-av
+    // Set audio mode configuration safely
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldRouteThroughEarpieceAndroid: false,
+    });
+
     const { sound } = await Audio.Sound.createAsync(
       { uri: soundUrl },
-      { shouldPlay: true }
+      { shouldPlay: true, volume: 1.0 }
     );
 
-    // Automatically unload sound after playing to prevent memory leaks
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if ( (status).didJustFinish) {
-        sound.unloadAsync();
+    sound.setOnPlaybackStatusUpdate(async (status) => {
+      if (status.didJustFinish) {
+        try {
+          await sound.unloadAsync();
+        } catch (e) {
+          // ignore double unload
+        }
       }
     });
   } catch (err) {

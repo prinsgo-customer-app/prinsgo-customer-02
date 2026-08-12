@@ -1,14 +1,46 @@
-import apiClient from './client';
+import locationService from '../services/location/locationService';
 
-export const searchPlaces = (input, lat, lng) =>
-  apiClient.get(
-    `/places/search?input=${encodeURIComponent(input)}${lat ? `&lat=${lat}` : ''}${
-      lng ? `&lng=${lng}` : ''
-    }`
-  );
+/**
+ * Wraps place search using the configured active LocationProvider with automatic fallback capability.
+ */
+export const searchPlaces = async (input, lat, lng) => {
+  try {
+    await locationService.init();
+    const provider = locationService.getProvider();
+    const predictions = await provider.search(input, lat, lng);
+    return { data: { predictions } };
+  } catch (err) {
+    console.error('searchPlaces failed:', err);
+    return { data: { predictions: [] } };
+  }
+};
 
-export const reverseGeocode = (lat, lng) =>
-  apiClient.get(`/places/reverse-geocode?lat=${lat}&lng=${lng}`);
+/**
+ * Wraps reverse geocoding with automatic fallback capability.
+ */
+export const reverseGeocode = async (lat, lng) => {
+  try {
+    await locationService.init();
+    const provider = locationService.getProvider();
+    const details = await provider.reverseGeocode(lat, lng);
+    return { data: details };
+  } catch (err) {
+    console.error('reverseGeocode failed:', err);
+    return { data: { address: `Location at ${lat}, ${lng}`, lat, lng } };
+  }
+};
 
-export const placeDetails = (placeId) =>
-  apiClient.get(`/places/details?placeId=${placeId}`);
+/**
+ * Wraps place details fetching with automatic fallback capability.
+ */
+export const placeDetails = async (placeId) => {
+  try {
+    await locationService.init();
+    const provider = locationService.getProvider();
+    const details = await provider.getDetails(placeId);
+    return { data: details };
+  } catch (err) {
+    console.error('placeDetails failed:', err);
+    return { data: { address: 'Unknown Location', lat: 18.5204, lng: 73.8567 } };
+  }
+};
