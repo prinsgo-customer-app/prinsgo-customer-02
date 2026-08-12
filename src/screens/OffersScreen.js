@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Share,
-  Clipboard,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useAuth } from '../context/AuthContext';
@@ -42,8 +42,8 @@ export default function OffersScreen({ navigation }) {
     }
   };
 
-  const copyToClipboard = (text, type = 'Coupon Code') => {
-    Clipboard.setString(text);
+  const copyToClipboard = async (text, type = 'Coupon Code') => {
+    await Clipboard.setStringAsync(text);
     Alert.alert('Copied! 📋', `${type} "${text}" successfully copied to your clipboard.`);
   };
 
