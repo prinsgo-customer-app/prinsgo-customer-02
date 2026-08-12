@@ -1,17 +1,14 @@
 Starting project at /app
-(node:319990) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:754305) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 Starting Metro Bundler
 warning: Bundler cache is empty, rebuilding (this may take a minute)
 Tunnel connected.
 Tunnel ready.
-
-TypeScript: The tsconfig.json has been updated (Use EXPO_NO_TYPESCRIPT_SETUP to skip)
-
-› Required modifications made to the tsconfig.json:
-
-  extends is now expo/tsconfig.base
-
-
 Waiting on http://localhost:8081
 Logs for your project will appear below.
+Android Bundling failed 14424ms node_modules/expo/AppEntry.js (969 modules)
+Unable to resolve "@react-native-clipboard/clipboard" from "src/screens/OffersScreen.js"
+Android Bundling failed 1155ms node_modules/expo/AppEntry.js (967 modules)
+Unable to resolve "@react-native-clipboard/clipboard" from "src/screens/OffersScreen.js"
+Android Bundled 14623ms node_modules/expo/AppEntry.js (979 modules)
