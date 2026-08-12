@@ -28,6 +28,12 @@ import AboutScreen from '../screens/AboutScreen';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 
+// Newly implemented screens
+import ClaimsScreen from '../screens/ClaimsScreen';
+import OffersScreen from '../screens/OffersScreen';
+import SafetyScreen from '../screens/SafetyScreen';
+import HelpScreen from '../screens/HelpScreen';
+
 import BottomNav from '../components/BottomNav';
 
 const Stack = createNativeStackNavigator();
@@ -100,6 +106,10 @@ function MainStack() {
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Claims" component={ClaimsScreen} />
+      <Stack.Screen name="Offers" component={OffersScreen} />
+      <Stack.Screen name="Safety" component={SafetyScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
     </Stack.Navigator>
   );
 }

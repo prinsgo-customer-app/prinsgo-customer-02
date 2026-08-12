@@ -11,7 +11,7 @@ export default function RateRideScreen({ route, navigation }) {
   const submit = async () => {
     try {
       await rateRide(rideId, rating, review);
-      navigation.replace('Home');
+      navigation.replace('MainTabs');
     } catch (err) {
       Alert.alert('Error', err.message);
     }
@@ -43,7 +43,7 @@ export default function RateRideScreen({ route, navigation }) {
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.replace('Home')} style={{ marginTop: 14 }}>
+      <TouchableOpacity onPress={() => navigation.replace('MainTabs')} style={{ marginTop: 14 }}>
         <Text style={{ textAlign: 'center', color: COLORS.textLight, fontWeight: '600' }}>Skip</Text>
       </TouchableOpacity>
     </View>

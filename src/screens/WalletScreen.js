@@ -12,6 +12,7 @@ import {
 import { getMyTransactions } from '../api/wallet';
 import { getSettings } from '../api/auth';
 import { COLORS } from '../utils/theme';
+import AnimatedCard from '../components/AnimatedCard';
 
 const REASON_LABELS = {
   ride_payment: 'Ride Payment',
@@ -79,7 +80,7 @@ export default function WalletScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListHeaderComponent={
         <>
-          <View style={styles.balanceCard}>
+          <AnimatedCard style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>Wallet Balance</Text>
             <View style={styles.balanceRow}>
               <Text style={styles.balanceAmount}>₹{Math.round(balance)}</Text>
@@ -87,10 +88,10 @@ export default function WalletScreen() {
                 <Text style={styles.addButtonText}>{showAddFunds ? 'Close' : '+ Add Funds'}</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </AnimatedCard>
 
           {showAddFunds && settings && (
-            <View style={styles.instructionsCard}>
+            <AnimatedCard style={styles.instructionsCard}>
               <Text style={styles.instructionsTitle}>How to Top up Wallet</Text>
               <Text style={styles.instructionsBody}>
                 Please make an online transfer of any amount to our bank or UPI. Once processed, our admins will adjust your wallet balance immediately.
@@ -124,7 +125,7 @@ export default function WalletScreen() {
                   </View>
                 </View>
               ) : null}
-            </View>
+            </AnimatedCard>
           )}
 
           <Text style={styles.sectionTitle}>Transaction History</Text>
@@ -155,13 +156,13 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  balanceCard: { backgroundColor: COLORS.textPrimary, borderRadius: 16, padding: 22, marginBottom: 24 },
-  balanceLabel: { color: COLORS.textLight, fontSize: 13 },
+  balanceCard: { backgroundColor: '#161B26', borderRadius: 16, padding: 22, marginBottom: 24, borderWidth: 1, borderColor: COLORS.primary },
+  balanceLabel: { color: '#94A3B8', fontSize: 13 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
-  balanceAmount: { color: COLORS.background, fontSize: 32, fontWeight: '800' },
+  balanceAmount: { color: '#FFFFFF', fontSize: 32, fontWeight: '800' },
   addButton: { backgroundColor: COLORS.primary, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
-  addButtonText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 13 },
-  instructionsCard: { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 18, marginBottom: 24, borderWidth: 1, borderColor: COLORS.border },
+  addButtonText: { color: '#0A0F24', fontWeight: '700', fontSize: 13 },
+  instructionsCard: { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 18, marginBottom: 24, borderWidth: 1, borderColor: COLORS.border, marginVertical: 0 },
   instructionsTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
   instructionsBody: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 19, marginBottom: 12 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },

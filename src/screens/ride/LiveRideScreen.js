@@ -11,6 +11,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { getRideById, cancelRide } from '../../api/rides';
 import { joinRideRoom, onDriverLocation } from '../../api/socket';
 import { COLORS } from '../../utils/theme';
+import { formatId } from '../../utils/idGenerator';
 
 const STATUS_LABELS = {
   requested: 'Searching for a driver...',
@@ -105,8 +106,8 @@ export default function LiveRideScreen({ route, navigation }) {
       <View style={styles.center}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.red }}>Oops! Something went wrong.</Text>
         <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20, color: COLORS.textSecondary }}>{errorMsg || "No Ride Found"}</Text>
-        <Text style={{ marginTop: 10, color: COLORS.textLight }}>Ride ID: {rideId || 'None'}</Text>
-        <TouchableOpacity style={styles.goHomeBtn} onPress={() => navigation.replace('Home')}>
+        <Text style={{ marginTop: 10, color: COLORS.textLight }}>Ride ID: {formatId('RID', rideId) || 'None'}</Text>
+        <TouchableOpacity style={styles.goHomeBtn} onPress={() => navigation.replace('MainTabs')}>
           <Text style={styles.goHomeText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
@@ -161,6 +162,9 @@ export default function LiveRideScreen({ route, navigation }) {
       </MapView>
 
       <View style={styles.sheet}>
+        <Text style={{ color: COLORS.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 4 }}>
+          TRIP STATUS (ID: {formatId('RID', ride?._id)})
+        </Text>
         <Text style={styles.status}>
           {STATUS_LABELS[ride?.status] || ride?.status || 'Processing...'}
         </Text>
@@ -171,10 +175,10 @@ export default function LiveRideScreen({ route, navigation }) {
               {ride.driver?.name || 'Driver Assigned'}
             </Text>
             <Text style={styles.driverInfo}>
-              {ride.driver?.vehicleNumber || 'Vehicle details pending'}
+              Vehicle: {ride.driver?.vehicleNumber || 'Vehicle details pending'}
             </Text>
             <Text style={styles.driverInfo}>
-              ⭐ {ride.driver?.rating ? Number(ride.driver.rating).toFixed(1) : "5.0"}
+              Driver Rating: ⭐ {ride.driver?.rating ? Number(ride.driver.rating).toFixed(1) : "5.0"}
             </Text>
           </View>
         ) : ride?.status === 'requested' ? (
@@ -188,34 +192,48 @@ export default function LiveRideScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {(ride?.status === 'requested' || ride?.status === 'accepted') ? (
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => {
-              Alert.alert(
-                "Cancel Ride",
-                "Do you want to cancel this ride?",
-                [
-                  { text: "No" },
-                  {
-                    text: "Yes, Cancel",
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await cancelRide(rideId, "Cancelled by customer");
-                        navigation.replace("Home");
-                      } catch (e) {
-                        Alert.alert("Error", e?.response?.data?.message || e.message);
-                      }
-                    },
-                  },
-                ]
-              );
-            }}
+            style={[styles.safetyButton, { flex: 1, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.primary }]}
+            onPress={() => navigation.navigate('Safety', {
+              tripDetails: {
+                displayId: formatId('RID', ride?._id),
+                status: ride?.status,
+              }
+            })}
           >
-            <Text style={styles.cancelText}>Cancel Ride</Text>
+            <Text style={[styles.safetyButtonText, { color: COLORS.primary }]}>🛡️ Safety Options</Text>
           </TouchableOpacity>
-        ) : null}
+
+          {(ride?.status === 'requested' || ride?.status === 'accepted') ? (
+            <TouchableOpacity
+              style={[styles.cancelButton, { flex: 1, marginTop: 0 }]}
+              onPress={() => {
+                Alert.alert(
+                  "Cancel Ride",
+                  "Do you want to cancel this ride?",
+                  [
+                    { text: "No" },
+                    {
+                      text: "Yes, Cancel",
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await cancelRide(rideId, "Cancelled by customer");
+                          navigation.replace("MainTabs");
+                        } catch (e) {
+                          Alert.alert("Error", e?.response?.data?.message || e.message);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.cancelText}>Cancel Ride</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -234,4 +252,6 @@ const styles = StyleSheet.create({
   cancelText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
   goHomeBtn: { marginTop: 20, backgroundColor: COLORS.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
   goHomeText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 16 },
+  safetyButton: { padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  safetyButtonText: { fontWeight: '700', fontSize: 16 },
 });

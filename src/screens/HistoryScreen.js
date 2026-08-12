@@ -14,6 +14,7 @@ import { getParcelHistory } from '../api/parcels';
 import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
 import { COLORS } from '../utils/theme';
+import { formatId } from '../utils/idGenerator';
 
 const STATUS_COLORS = {
   completed: COLORS.green,
@@ -111,7 +112,9 @@ export default function HistoryScreen({ route }) {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.cardTop}>
-                <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                <Text style={styles.date}>
+                  ID: {tab === 'rides' ? formatId('RID', item._id) : formatId('PRC', item._id)} · {new Date(item.createdAt).toLocaleDateString()}
+                </Text>
                 <Text style={[styles.status, { color: STATUS_COLORS[item.status] || COLORS.textLight }]}>
                   {item.status}
                 </Text>

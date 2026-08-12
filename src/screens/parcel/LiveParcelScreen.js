@@ -11,6 +11,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { getParcelById, cancelParcel } from '../../api/parcels';
 import { joinParcelRoom, onDriverLocation } from '../../api/socket';
 import { COLORS } from '../../utils/theme';
+import { formatId } from '../../utils/idGenerator';
 
 const STATUS_LABELS = {
   requested: 'Looking for a delivery partner...',
@@ -99,7 +100,8 @@ export default function LiveParcelScreen({ route, navigation }) {
         <Text style={{ marginTop: 10, textAlign: 'center', paddingHorizontal: 20, color: COLORS.textSecondary }}>
           {errorMsg || 'No parcel found'}
         </Text>
-        <TouchableOpacity style={styles.doneButton} onPress={() => navigation.replace('Home')}>
+        <Text style={{ marginTop: 10, color: COLORS.textLight }}>Parcel ID: {formatId('PRC', parcelId) || 'None'}</Text>
+        <TouchableOpacity style={styles.doneButton} onPress={() => navigation.replace('MainTabs')}>
           <Text style={styles.doneText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
@@ -146,6 +148,9 @@ export default function LiveParcelScreen({ route, navigation }) {
       </MapView>
 
       <View style={styles.sheet}>
+        <Text style={{ color: COLORS.primary, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 4 }}>
+          CONSIGNMENT STATUS (ID: {formatId('PRC', parcel?._id)})
+        </Text>
         <Text style={styles.status}>
           {STATUS_LABELS[parcel?.status] || parcel?.status || 'Processing...'}
         </Text>
@@ -153,7 +158,7 @@ export default function LiveParcelScreen({ route, navigation }) {
         {parcel?.driver && typeof parcel.driver === 'object' ? (
           <View>
             <Text style={styles.driverName}>{parcel.driver?.name || 'Delivery Partner Assigned'}</Text>
-            <Text style={styles.driverInfo}>{parcel.driver?.vehicleNumber || 'Vehicle details pending'}</Text>
+            <Text style={styles.driverInfo}>Vehicle: {parcel.driver?.vehicleNumber || 'Vehicle details pending'}</Text>
           </View>
         ) : parcel?.status === 'requested' ? (
           <Text style={styles.driverInfo}>Looking for a nearby delivery partner...</Text>
@@ -168,34 +173,48 @@ export default function LiveParcelScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {parcel?.status === 'delivered' ? (
-          <TouchableOpacity style={styles.doneButton} onPress={() => navigation.replace('Home')}>
-            <Text style={styles.doneText}>Done</Text>
-          </TouchableOpacity>
-        ) : canCancel ? (
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => {
-              Alert.alert('Cancel Delivery', 'Do you want to cancel this parcel delivery?', [
-                { text: 'No' },
-                {
-                  text: 'Yes, Cancel',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await cancelParcel(parcelId, 'Cancelled by customer');
-                      navigation.replace('Home');
-                    } catch (e) {
-                      Alert.alert('Error', e?.message || 'Failed to cancel');
-                    }
-                  },
-                },
-              ]);
-            }}
+            style={[styles.safetyButton, { flex: 1, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.primary }]}
+            onPress={() => navigation.navigate('Safety', {
+              tripDetails: {
+                displayId: formatId('PRC', parcel?._id),
+                status: parcel?.status,
+              }
+            })}
           >
-            <Text style={styles.cancelText}>Cancel Delivery</Text>
+            <Text style={[styles.safetyButtonText, { color: COLORS.primary }]}>🛡️ Safety Options</Text>
           </TouchableOpacity>
-        ) : null}
+
+          {parcel?.status === 'delivered' ? (
+            <TouchableOpacity style={[styles.doneButton, { flex: 1, marginTop: 0 }]} onPress={() => navigation.replace('MainTabs')}>
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
+          ) : canCancel ? (
+            <TouchableOpacity
+              style={[styles.cancelButton, { flex: 1, marginTop: 0 }]}
+              onPress={() => {
+                Alert.alert('Cancel Delivery', 'Do you want to cancel this parcel delivery?', [
+                  { text: 'No' },
+                  {
+                    text: 'Yes, Cancel',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await cancelParcel(parcelId, 'Cancelled by customer');
+                        navigation.replace('MainTabs');
+                      } catch (e) {
+                        Alert.alert('Error', e?.message || 'Failed to cancel');
+                      }
+                    },
+                  },
+                ]);
+              }}
+            >
+              <Text style={styles.cancelText}>Cancel Delivery</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -217,4 +236,6 @@ const styles = StyleSheet.create({
   cancelText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
   doneButton: { marginTop: 20, backgroundColor: COLORS.green, padding: 16, borderRadius: 12, alignItems: 'center' },
   doneText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
+  safetyButton: { padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  safetyButtonText: { fontWeight: '700', fontSize: 16 },
 });
