@@ -33,6 +33,10 @@ import ClaimsScreen from '../screens/ClaimsScreen';
 import OffersScreen from '../screens/OffersScreen';
 import SafetyScreen from '../screens/SafetyScreen';
 import HelpScreen from '../screens/HelpScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import EmergencyContactsScreen from '../screens/EmergencyContactsScreen';
+import SavedAddressesScreen from '../screens/SavedAddressesScreen';
+import SecurityScreen from '../screens/SecurityScreen';
 
 import BottomNav from '../components/BottomNav';
 
@@ -110,6 +114,10 @@ function MainStack() {
       <Stack.Screen name="Offers" component={OffersScreen} />
       <Stack.Screen name="Safety" component={SafetyScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
+      <Stack.Screen name="SavedAddresses" component={SavedAddressesScreen} />
+      <Stack.Screen name="Security" component={SecurityScreen} />
     </Stack.Navigator>
   );
 }
