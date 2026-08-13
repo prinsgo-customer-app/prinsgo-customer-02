@@ -1,0 +1,16 @@
+Starting project at /app
+(node:236641) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Starting Metro Bundler
+Tunnel connected.
+Tunnel ready.
+
+TypeScript: The tsconfig.json has been updated (Use EXPO_NO_TYPESCRIPT_SETUP to skip)
+
+› Required modifications made to the tsconfig.json:
+
+  extends is now expo/tsconfig.base
+
+
+Waiting on http://localhost:8081
+Logs for your project will appear below.

@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useAuth } from '../context/AuthContext';
@@ -42,8 +42,8 @@ export default function OffersScreen({ navigation }) {
     }
   };
 
-  const copyToClipboard = async (text, type = 'Coupon Code') => {
-    await Clipboard.setStringAsync(text);
+  const copyToClipboard = (text, type = 'Coupon Code') => {
+    Clipboard.setString(text);
     Alert.alert('Copied! 📋', `${type} "${text}" successfully copied to your clipboard.`);
   };
 
