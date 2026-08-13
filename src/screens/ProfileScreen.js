@@ -2,93 +2,110 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Image,
   Alert,
-  Share,
-  Linking,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Clipboard from 'expo-clipboard';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { useAccessibility } from '../context/AccessibilityContext';
-import { getSettings } from '../api/auth';
+import { updateProfile, addAddress, deleteAddress, getSettings } from '../api/auth';
 import BottomNav from '../components/BottomNav';
 import AnimatedCard from '../components/AnimatedCard';
+import { useTheme } from '../context/ThemeContext';
+import { useLocalization } from '../context/LocalizationContext';
+
+const LABEL_ICONS = { home: 'home', work: 'briefcase', other: 'map-pin' };
 
 export default function ProfileScreen({ navigation }) {
-  const { colors } = useTheme();
-  const { fontSizeMultiplier } = useAccessibility();
   const { user, logout, refreshUser } = useAuth();
+  const { colors } = useTheme();
+  const { t } = useLocalization();
 
-  // Premium details fetched dynamically or fallbacks
-  const [profilePic, setProfilePic] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [saving, setSaving] = useState(false);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLabel, setNewLabel] = useState('home');
+  const [newAddress, setNewAddress] = useState('');
+  const [addingAddress, setAddingAddress] = useState(false);
+
+  // Dynamic support settings
+  const [supportPhone, setSupportPhone] = useState('');
+  const [supportEmail, setSupportEmail] = useState('');
   const [adminSettings, setAdminSettings] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    navigation.addListener('focus', () => {
-      refreshUser();
-      loadAdditionalDetails();
-    });
     fetchSupportSettings();
-  }, [navigation]);
-
-  const loadAdditionalDetails = async () => {
-    try {
-      const saved = await AsyncStorage.getItem('prinsgo_profile_extra');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.profilePic) setProfilePic(parsed.profilePic);
-        if (parsed.dob) {
-          // Can be used for extended info
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-  };
+  }, []);
 
   const fetchSupportSettings = async () => {
     try {
       const res = await getSettings();
-      if (res.data?.settings) {
-        setAdminSettings(res.data.settings);
+      const settings = res.data?.settings;
+      if (settings) {
+        setSupportPhone(settings.supportPhone || '');
+        setSupportEmail(settings.supportEmail || '');
+        setAdminSettings(settings);
       }
     } catch (err) {
-      // ignore
+      setSupportPhone('9999999999');
+      setSupportEmail('support@prinsgo.com');
     }
   };
 
-  useEffect(() => {
-    if (user?.name) {
-      const parts = user.name.split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
-    }
-  }, [user]);
-
-  const copyReferralCode = async () => {
-    const code = user?.referralCode || 'NOT AVAILABLE';
-    await Clipboard.setStringAsync(code);
-    Alert.alert('Copied! 📋', `Referral Code "${code}" copied to clipboard.`);
-  };
-
-  const handleShareReferral = async () => {
-    const code = user?.referralCode || 'NOT_AVAILABLE';
+  const saveProfile = async () => {
+    setSaving(true);
     try {
-      await Share.share({
-        message: `Join PrinsGo with my referral code: *${code}* and get ₹50 free wallet credits! https://prinsgo.com`,
-      });
-    } catch (e) {
-      // ignore
+      await updateProfile({ name, email: email || undefined });
+      await refreshUser();
+      setEditing(false);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const submitAddress = async () => {
+    if (!newAddress.trim()) {
+      Alert.alert('Address required', 'Enter an address');
+      return;
+    }
+    setAddingAddress(true);
+    try {
+      await addAddress({ label: newLabel, address: newAddress, lat: 18.5204, lng: 73.8567 });
+      await refreshUser();
+      setNewAddress('');
+      setShowAddForm(false);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setAddingAddress(false);
+    }
+  };
+
+  const removeAddress = (addressId) => {
+    Alert.alert('Remove address?', '', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteAddress(addressId);
+            await refreshUser();
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+    ]);
   };
 
   const handleLogout = () => {
@@ -116,154 +133,202 @@ export default function ProfileScreen({ navigation }) {
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 60, paddingBottom: 110 }}>
 
-        {/* Premium Profile Header */}
-        <AnimatedCard style={styles.profileHeaderCard}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.avatarTouch}>
-              <Image source={{ uri: profilePic }} style={styles.avatar} />
-              <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
-                <Text style={{ fontSize: 10 }}>✏️</Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={{ flex: 1, marginLeft: 16 }}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.profileName, { color: colors.textPrimary, fontSize: 18 * fontSizeMultiplier }]}>
-                  {firstName || 'PrinsGo'} {lastName || 'User'}
-                </Text>
-                <View style={[styles.badge, { backgroundColor: '#10B981' }]}>
-                  <Text style={styles.badgeText}>✓ VERIFIED</Text>
-                </View>
-              </View>
-              <Text style={[styles.profileSub, { color: colors.textSecondary }]}>+91 {user?.phone}</Text>
-              {user?.email ? <Text style={[styles.profileEmail, { color: colors.textLight }]}>{user.email}</Text> : null}
-            </View>
+        {/* 1. Profile Header */}
+        <View style={styles.profileHeaderCard}>
+          <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.avatarInitial, { color: '#0A0F24' }]}>
+              {user?.name?.[0]?.toUpperCase() || '?'}
+            </Text>
           </View>
 
-          <TouchableOpacity style={[styles.editProfileBtn, { borderColor: colors.border }]} onPress={() => navigation.navigate('EditProfile')}>
-            <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 13 }}>Edit Personal Details</Text>
-          </TouchableOpacity>
-        </AnimatedCard>
-
-        {/* Saved Addresses Summary Shortcut */}
-        <AnimatedCard style={styles.addressSummaryCard} onPress={() => navigation.navigate('SavedAddresses')}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 20 }}>🏠</Text>
-              <View>
-                <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Saved Addresses</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                  {user?.savedAddresses?.length || 0} locations registered
-                </Text>
+          <View style={styles.headerInfo}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.name, { color: colors.textPrimary }]}>{user?.name}</Text>
+              <View style={[styles.verifiedBadge, { backgroundColor: colors.green + '15' }]}>
+                <Feather name="check-circle" size={12} color={colors.green} />
+                <Text style={[styles.verifiedText, { color: colors.green }]}>Verified</Text>
               </View>
             </View>
-            <Text style={{ color: colors.textLight, fontSize: 18 }}>›</Text>
-          </View>
-        </AnimatedCard>
+            <Text style={[styles.phone, { color: colors.textSecondary }]}>+91 {user?.phone}</Text>
+            {user?.email ? <Text style={[styles.email, { color: colors.textSecondary }]}>{user.email}</Text> : null}
 
-        {/* Emergency Contacts Shortcut */}
-        <AnimatedCard style={styles.addressSummaryCard} onPress={() => navigation.navigate('EmergencyContacts')}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 20 }}>📞</Text>
-              <View>
-                <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Emergency Contacts</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Add family and trusted contacts</Text>
-              </View>
-            </View>
-            <Text style={{ color: colors.textLight, fontSize: 18 }}>›</Text>
-          </View>
-        </AnimatedCard>
-
-        {/* Referral Card */}
-        <AnimatedCard style={styles.referralCard}>
-          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
-            🎉 Referral Bonus Program
-          </Text>
-          <Text style={[styles.referralDesc, { color: colors.textSecondary }]}>
-            Give ₹50 to your friends, get ₹50 as soon as they complete their first ride or parcel delivery.
-          </Text>
-          <View style={[styles.codeRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <TouchableOpacity onPress={copyReferralCode} style={{ flex: 1 }}>
-              <Text style={[styles.codeText, { color: colors.textPrimary }]}>{user?.referralCode || 'NOT AVAILABLE'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleShareReferral} style={[styles.shareBtn, { backgroundColor: colors.primary }]}>
-              <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 12 }}>SHARE</Text>
+            <TouchableOpacity style={[styles.editLink, { backgroundColor: colors.cardBg }]} onPress={() => setEditing(!editing)}>
+              <Feather name={editing ? "x" : "edit-2"} size={12} color={colors.textPrimary} />
+              <Text style={[styles.editLinkText, { color: colors.textPrimary }]}>{editing ? "Cancel" : "Edit Profile"}</Text>
             </TouchableOpacity>
           </View>
-        </AnimatedCard>
+        </View>
 
-        {/* Settings Navigation Menu */}
-        <View style={styles.menuSection}>
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('History')}>
-            <Text style={styles.menuIcon}>🏍️</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Trips & Bookings History</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
+        {editing && (
+          <AnimatedCard style={styles.editCard}>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Name</Text>
+            <TextInput style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]} value={name} onChangeText={setName} />
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Email</Text>
+            <TextInput
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="you@example.com"
+              placeholderTextColor={colors.textLight}
+            />
+            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={saveProfile} disabled={saving}>
+              {saving ? <ActivityIndicator color="#0A0F24" /> : <Text style={styles.primaryButtonText}>Save Details</Text>}
+            </TouchableOpacity>
+          </AnimatedCard>
+        )}
 
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Wallet')}>
-            <Text style={styles.menuIcon}>💳</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Payments & Wallet</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Safety')}>
-            <Text style={styles.menuIcon}>🛡️</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Safety Center</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Security')}>
-            <Text style={styles.menuIcon}>🔒</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Account Security & PIN</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Settings')}>
-            <Text style={styles.menuIcon}>⚙️</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>System & UI Settings</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Claims')}>
-            <Text style={styles.menuIcon}>⚖️</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Claims & Grievance Center</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Help')}>
-            <Text style={styles.menuIcon}>🎧</Text>
-            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Help & FAQs</Text>
-            <Text style={{ color: colors.textLight }}>›</Text>
+        {/* 2. Saved Addresses */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Saved Addresses</Text>
+          <TouchableOpacity onPress={() => setShowAddForm(!showAddForm)}>
+            <Text style={[styles.addLink, { color: colors.primary }]}>{showAddForm ? 'Cancel' : '+ Add'}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Social Media Links */}
-        <Text style={[styles.socialHeader, { color: colors.textLight }]}>Connect with us</Text>
+        {showAddForm && (
+          <View style={[styles.addForm, { backgroundColor: colors.cardBg }]}>
+            <View style={styles.labelRow}>
+              {['home', 'work', 'other'].map((l) => (
+                <TouchableOpacity
+                  key={l}
+                  style={[styles.labelChip, { borderColor: colors.border }, newLabel === l && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                  onPress={() => setNewLabel(l)}
+                >
+                  <Text style={[styles.labelChipText, { color: colors.textSecondary }, newLabel === l && { color: '#0A0F24', fontWeight: '700' }]}>
+                    <Feather name={LABEL_ICONS[l]} size={12} /> {l}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, marginBottom: 12 }]}
+              placeholder="Full address details"
+              placeholderTextColor={colors.textLight}
+              value={newAddress}
+              onChangeText={setNewAddress}
+              multiline
+            />
+            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={submitAddress} disabled={addingAddress}>
+              {addingAddress ? <ActivityIndicator color="#0A0F24" /> : <Text style={styles.primaryButtonText}>Save Address</Text>}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <AnimatedCard style={styles.addressListCard}>
+          {user?.savedAddresses?.length ? (
+            user.savedAddresses.map((addr, idx) => (
+              <View key={addr._id} style={[styles.addressRow, idx < user.savedAddresses.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                <View style={[styles.addressIconWrap, { backgroundColor: colors.background }]}>
+                  <Feather name={LABEL_ICONS[addr.label] || 'map-pin'} size={14} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.addressLabel, { color: colors.textPrimary }]}>{addr.label}</Text>
+                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>{addr.address}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeAddress(addr._id)}>
+                  <Feather name="trash-2" size={16} color={colors.red} />
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            !showAddForm && (
+              <View style={{ padding: 16, alignItems: 'center' }}>
+                <Text style={{ color: colors.textLight, fontSize: 13 }}>No saved addresses yet.</Text>
+              </View>
+            )
+          )}
+        </AnimatedCard>
+
+        {/* 3. Referral & Rewards */}
+        <AnimatedCard style={styles.rewardCard}>
+          <View style={styles.rewardHeader}>
+            <Feather name="gift" size={24} color={colors.primary} />
+            <View>
+              <Text style={[styles.rewardTitle, { color: colors.textPrimary }]}>Referral & Rewards</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Invite friends to earn ride credits</Text>
+            </View>
+          </View>
+          <View style={[styles.referralBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <Text style={[styles.referralCode, { color: colors.textPrimary }]}>{user?.referralCode || 'NOT AVAILABLE'}</Text>
+            <TouchableOpacity style={[styles.shareBtn, { backgroundColor: colors.primary }]} onPress={() => Alert.alert('Share', `Use code ${user?.referralCode} to sign up on PrinsGo!`)}>
+              <Feather name="share-2" size={14} color="#0A0F24" />
+              <Text style={styles.shareBtnText}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        </AnimatedCard>
+
+        {/* Grouped Actions List */}
+        <Text style={[styles.groupTitle, { color: colors.textLight }]}>Trips & Finances</Text>
+        <AnimatedCard style={styles.groupCard}>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => navigation.navigate('History', { initialTab: 'rides' })}>
+            <Feather name="navigation" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Trips & Ride History</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => navigation.navigate('History', { initialTab: 'parcels' })}>
+            <Feather name="box" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Parcel & Logistics History</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => navigation.navigate('Wallet')}>
+            <Feather name="credit-card" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Payments, Wallet & Top-up</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Claims')}>
+            <Feather name="file-text" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Refund & Grievance Claims</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+        </AnimatedCard>
+
+        <Text style={[styles.groupTitle, { color: colors.textLight }]}>Safety & Settings</Text>
+        <AnimatedCard style={styles.groupCard}>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => navigation.navigate('Safety')}>
+            <Feather name="shield" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Safety Center & Emergency SOS</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => navigation.navigate('Settings')}>
+            <Feather name="settings" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Account Security & Preferences</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Help')}>
+            <Feather name="help-circle" size={16} color={colors.primary} />
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Help, Support & FAQs</Text>
+            <Feather name="chevron-right" size={14} color={colors.textLight} />
+          </TouchableOpacity>
+        </AnimatedCard>
+
+        {/* Social Media Row */}
+        <Text style={[styles.socialHeader, { color: colors.textLight }]}>Connect with PrinsGo</Text>
         <View style={styles.socialRow}>
           {[
-            { platform: 'whatsapp', icon: '💬' },
-            { platform: 'instagram', icon: '📸' },
-            { platform: 'youtube', icon: '📺' },
-            { platform: 'facebook', icon: '👤' },
-            { platform: 'twitter', icon: '🐦' },
-            { platform: 'linkedin', icon: '💼' },
+            { platform: 'whatsapp', icon: 'message-circle' },
+            { platform: 'instagram', icon: 'instagram' },
+            { platform: 'youtube', icon: 'youtube' },
+            { platform: 'facebook', icon: 'facebook' },
+            { platform: 'twitter', icon: 'twitter' },
+            { platform: 'linkedin', icon: 'linkedin' },
           ].map((item) => (
             <TouchableOpacity
               key={item.platform}
-              style={[styles.socialIconWrap, { backgroundColor: colors.cardBg }]}
+              style={[styles.socialIconWrap, { backgroundColor: colors.cardBg, borderColor: colors.border, borderWidth: 1 }]}
               onPress={() => handleSocialLink(item.platform)}
             >
-              <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+              <Feather name={item.icon} size={18} color={colors.primary} />
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity style={[styles.logoutButton, { borderColor: colors.red }]} onPress={handleLogout}>
-          <Text style={[styles.logoutText, { color: colors.red }]}>Log Out of PrinsGo</Text>
+          <Feather name="log-out" size={16} color={colors.red} style={{ marginRight: 6 }} />
+          <Text style={[styles.logoutText, { color: colors.red }]}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
-
       <BottomNav active="Profile" />
     </View>
   );
@@ -272,77 +337,98 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flex: 1 },
-
-  profileHeaderCard: { padding: 18, marginBottom: 14 },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  avatarTouch: { position: 'relative' },
-  avatar: { width: 64, height: 64, borderRadius: 32 },
-  editBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  profileHeaderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 20,
+    gap: 16,
+  },
+  avatarCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  profileName: { fontWeight: '800' },
-  badge: {
+  avatarInitial: { fontSize: 24, fontWeight: '800' },
+  headerInfo: { flex: 1 },
+  name: { fontSize: 18, fontWeight: '800' },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
-  profileSub: { fontSize: 14, marginTop: 4, fontWeight: '500' },
-  profileEmail: { fontSize: 12, marginTop: 2 },
-  editProfileBtn: {
-    marginTop: 14,
-    borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
+    gap: 3,
   },
-
-  addressSummaryCard: { padding: 16, marginBottom: 10 },
-  sectionHeading: { fontSize: 14, fontWeight: '800' },
-
-  referralCard: { padding: 18, marginVertical: 14 },
-  referralDesc: { fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 12 },
-  codeRow: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 6,
-    alignItems: 'center',
-  },
-  codeText: { fontSize: 16, fontWeight: '900', letterSpacing: 1.5, marginLeft: 8 },
-  shareBtn: { borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 },
-
-  menuSection: { marginTop: 14 },
-  menuRow: {
+  verifiedText: { fontSize: 9, fontWeight: '800', uppercase: true },
+  phone: { fontSize: 13, marginTop: 2 },
+  email: { fontSize: 12, marginTop: 1 },
+  editLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  menuIcon: { fontSize: 18, width: 28 },
-  menuLabel: { flex: 1, fontSize: 14, fontWeight: '600' },
+  editLinkText: { fontSize: 11, fontWeight: '700' },
 
-  socialHeader: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', marginTop: 28, marginBottom: 12, textAlign: 'center', letterSpacing: 0.5 },
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 14 },
-  socialIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  editCard: { padding: 14, marginBottom: 14 },
+  label: { fontSize: 12, marginBottom: 4, marginTop: 8, fontWeight: '700' },
+  input: {
+    borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 14,
+  },
+  primaryButton: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  primaryButtonText: { color: '#0A0F24', fontWeight: '800', fontSize: 14 },
 
-  logoutButton: {
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '800' },
+  addLink: { fontWeight: '700', fontSize: 13 },
+  addForm: { borderRadius: 14, padding: 14, marginBottom: 14 },
+  labelRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  labelChip: { borderWidth: 1, borderRadius: 18, paddingVertical: 6, paddingHorizontal: 12 },
+  labelChipText: { fontSize: 12, textTransform: 'capitalize' },
+
+  addressListCard: { padding: 0, overflow: 'hidden' },
+  addressRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+  addressIconWrap: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  addressLabel: { fontSize: 12, fontWeight: '800', textTransform: 'capitalize' },
+  addressText: { fontSize: 11, marginTop: 2, lineHeight: 15 },
+
+  rewardCard: { padding: 14, marginTop: 16, marginBottom: 16 },
+  rewardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  rewardTitle: { fontSize: 14, fontWeight: '800' },
+  referralBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 32,
-    marginBottom: 20,
+    padding: 10,
+    marginTop: 12,
   },
-  logoutText: { fontWeight: '700', fontSize: 14 },
+  referralCode: { fontSize: 18, fontWeight: '800', letterSpacing: 1 },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, gap: 4 },
+  shareBtnText: { color: '#0A0F24', fontWeight: '800', fontSize: 11 },
+
+  groupTitle: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginTop: 20, marginBottom: 8, letterSpacing: 0.5 },
+  groupCard: { paddingHorizontal: 14, paddingVertical: 4, marginVertical: 0 },
+  menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 12 },
+  menuLabel: { flex: 1, fontSize: 13, fontWeight: '600' },
+
+  socialHeader: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginTop: 24, marginBottom: 12, textAlign: 'center', letterSpacing: 0.5 },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 16 },
+  socialIconWrap: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+
+  logoutButton: { flexDirection: 'row', borderWidth: 1, borderRadius: 10, paddingVertical: 12, justifyContent: 'center', alignItems: 'center', marginTop: 20, marginBottom: 10 },
+  logoutText: { fontWeight: '800', fontSize: 14 },
 });
