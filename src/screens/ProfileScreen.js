@@ -2,115 +2,100 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
+  Image,
   Alert,
-  ActivityIndicator,
+  Share,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { useAuth } from '../context/AuthContext';
-import { updateProfile, addAddress, deleteAddress, getSettings } from '../api/auth';
+import { useTheme } from '../context/ThemeContext';
+import { useAccessibility } from '../context/AccessibilityContext';
+import { getSettings } from '../api/auth';
 import BottomNav from '../components/BottomNav';
-import { COLORS } from '../utils/theme';
-
-const LABEL_ICONS = { home: '🏠', work: '💼', other: '📍' };
+import AnimatedCard from '../components/AnimatedCard';
 
 export default function ProfileScreen({ navigation }) {
+  const { colors } = useTheme();
+  const { fontSizeMultiplier } = useAccessibility();
   const { user, logout, refreshUser } = useAuth();
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [saving, setSaving] = useState(false);
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newLabel, setNewLabel] = useState('home');
-  const [newAddress, setNewAddress] = useState('');
-  const [addingAddress, setAddingAddress] = useState(false);
-
-  // Dynamic support settings
-  const [supportPhone, setSupportPhone] = useState('');
-  const [supportEmail, setSupportEmail] = useState('');
+  // Premium details fetched dynamically or fallbacks
+  const [profilePic, setProfilePic] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [adminSettings, setAdminSettings] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    navigation.addListener('focus', () => {
+      refreshUser();
+      loadAdditionalDetails();
+    });
     fetchSupportSettings();
-  }, []);
+  }, [navigation]);
+
+  const loadAdditionalDetails = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('prinsgo_profile_extra');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.profilePic) setProfilePic(parsed.profilePic);
+        if (parsed.dob) {
+          // Can be used for extended info
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const fetchSupportSettings = async () => {
     try {
       const res = await getSettings();
-      const settings = res.data?.settings;
-      if (settings) {
-        setSupportPhone(settings.supportPhone || '');
-        setSupportEmail(settings.supportEmail || '');
-        setAdminSettings(settings);
+      if (res.data?.settings) {
+        setAdminSettings(res.data.settings);
       }
     } catch (err) {
-      setSupportPhone('9999999999');
-      setSupportEmail('support@prinsgo.com');
+      // ignore
     }
   };
 
-  const saveProfile = async () => {
-    setSaving(true);
+  useEffect(() => {
+    if (user?.name) {
+      const parts = user.name.split(' ');
+      setFirstName(parts[0] || '');
+      setLastName(parts.slice(1).join(' ') || '');
+    }
+  }, [user]);
+
+  const copyReferralCode = async () => {
+    const code = user?.referralCode || 'NOT AVAILABLE';
+    await Clipboard.setStringAsync(code);
+    Alert.alert('Copied! 📋', `Referral Code "${code}" copied to clipboard.`);
+  };
+
+  const handleShareReferral = async () => {
+    const code = user?.referralCode || 'NOT_AVAILABLE';
     try {
-      await updateProfile({ name, email: email || undefined });
-      await refreshUser();
-      setEditing(false);
-    } catch (err) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setSaving(false);
+      await Share.share({
+        message: `Join PrinsGo with my referral code: *${code}* and get ₹50 free wallet credits! https://prinsgo.com`,
+      });
+    } catch (e) {
+      // ignore
     }
-  };
-
-  const submitAddress = async () => {
-    if (!newAddress.trim()) {
-      Alert.alert('Address required', 'Enter an address');
-      return;
-    }
-    setAddingAddress(true);
-    try {
-      await addAddress({ label: newLabel, address: newAddress, lat: 18.5204, lng: 73.8567 });
-      await refreshUser();
-      setNewAddress('');
-      setShowAddForm(false);
-    } catch (err) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setAddingAddress(false);
-    }
-  };
-
-  const removeAddress = (addressId) => {
-    Alert.alert('Remove address?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteAddress(addressId);
-            await refreshUser();
-          } catch (err) {
-            Alert.alert('Error', err.message);
-          }
-        },
-      },
-    ]);
   };
 
   const handleLogout = () => {
-    Alert.alert('Log out?', '', [
+    Alert.alert('Log out?', 'Are you sure you want to log out of PrinsGo?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log out', style: 'destructive', onPress: logout },
     ]);
-  };
-
-  const handleSupport = () => {
-    navigation.navigate('Help');
   };
 
   const handleSocialLink = (platform) => {
@@ -128,150 +113,133 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 60, paddingBottom: 110 }}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarInitial}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
-        </View>
 
-        {editing ? (
-          <>
-            <Text style={styles.label}>Name</Text>
-            <TextInput style={styles.input} value={name} onChangeText={setName} />
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholder="you@example.com"
-              placeholderTextColor={COLORS.textLight}
-            />
-            <View style={styles.rowButtons}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => setEditing(false)}>
-                <Text style={styles.secondaryButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={saveProfile} disabled={saving}>
-                {saving ? <ActivityIndicator color={COLORS.textPrimary} /> : <Text style={styles.primaryButtonText}>Save</Text>}
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <>
-            <Text style={styles.name}>{user?.name}</Text>
-            <Text style={styles.phone}>+91 {user?.phone}</Text>
-            {user?.email ? <Text style={styles.phone}>{user.email}</Text> : null}
-            <TouchableOpacity style={styles.editLink} onPress={() => setEditing(true)}>
-              <Text style={styles.editLinkText}>Edit profile</Text>
+        {/* Premium Profile Header */}
+        <AnimatedCard style={styles.profileHeaderCard}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.avatarTouch}>
+              <Image source={{ uri: profilePic }} style={styles.avatar} />
+              <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
+                <Text style={{ fontSize: 10 }}>✏️</Text>
+              </View>
             </TouchableOpacity>
-          </>
-        )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Referral Code</Text>
-          <Text style={styles.referralCode}>{user?.referralCode || 'NOT AVAILABLE'}</Text>
-          <Text style={styles.cardSub}>Share this with friends to earn rewards</Text>
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Saved Addresses</Text>
-          <TouchableOpacity onPress={() => setShowAddForm(!showAddForm)}>
-            <Text style={styles.addLink}>{showAddForm ? 'Cancel' : '+ Add'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {showAddForm && (
-          <View style={styles.addForm}>
-            <View style={styles.labelRow}>
-              {['home', 'work', 'other'].map((l) => (
-                <TouchableOpacity
-                  key={l}
-                  style={[styles.labelChip, newLabel === l && styles.labelChipActive]}
-                  onPress={() => setNewLabel(l)}
-                >
-                  <Text style={[styles.labelChipText, newLabel === l && styles.labelChipTextActive]}>
-                    {LABEL_ICONS[l]} {l}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <View style={styles.nameRow}>
+                <Text style={[styles.profileName, { color: colors.textPrimary, fontSize: 18 * fontSizeMultiplier }]}>
+                  {firstName || 'PrinsGo'} {lastName || 'User'}
+                </Text>
+                <View style={[styles.badge, { backgroundColor: '#10B981' }]}>
+                  <Text style={styles.badgeText}>✓ VERIFIED</Text>
+                </View>
+              </View>
+              <Text style={[styles.profileSub, { color: colors.textSecondary }]}>+91 {user?.phone}</Text>
+              {user?.email ? <Text style={[styles.profileEmail, { color: colors.textLight }]}>{user.email}</Text> : null}
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Full address"
-              placeholderTextColor={COLORS.textLight}
-              value={newAddress}
-              onChangeText={setNewAddress}
-              multiline
-            />
-            <TouchableOpacity style={styles.primaryButton} onPress={submitAddress} disabled={addingAddress}>
-              {addingAddress ? <ActivityIndicator color={COLORS.textPrimary} /> : <Text style={styles.primaryButtonText}>Save Address</Text>}
+          </View>
+
+          <TouchableOpacity style={[styles.editProfileBtn, { borderColor: colors.border }]} onPress={() => navigation.navigate('EditProfile')}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 13 }}>Edit Personal Details</Text>
+          </TouchableOpacity>
+        </AnimatedCard>
+
+        {/* Saved Addresses Summary Shortcut */}
+        <AnimatedCard style={styles.addressSummaryCard} onPress={() => navigation.navigate('SavedAddresses')}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ fontSize: 20 }}>🏠</Text>
+              <View>
+                <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Saved Addresses</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                  {user?.savedAddresses?.length || 0} locations registered
+                </Text>
+              </View>
+            </View>
+            <Text style={{ color: colors.textLight, fontSize: 18 }}>›</Text>
+          </View>
+        </AnimatedCard>
+
+        {/* Emergency Contacts Shortcut */}
+        <AnimatedCard style={styles.addressSummaryCard} onPress={() => navigation.navigate('EmergencyContacts')}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ fontSize: 20 }}>📞</Text>
+              <View>
+                <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Emergency Contacts</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Add family and trusted contacts</Text>
+              </View>
+            </View>
+            <Text style={{ color: colors.textLight, fontSize: 18 }}>›</Text>
+          </View>
+        </AnimatedCard>
+
+        {/* Referral Card */}
+        <AnimatedCard style={styles.referralCard}>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
+            🎉 Referral Bonus Program
+          </Text>
+          <Text style={[styles.referralDesc, { color: colors.textSecondary }]}>
+            Give ₹50 to your friends, get ₹50 as soon as they complete their first ride or parcel delivery.
+          </Text>
+          <View style={[styles.codeRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <TouchableOpacity onPress={copyReferralCode} style={{ flex: 1 }}>
+              <Text style={[styles.codeText, { color: colors.textPrimary }]}>{user?.referralCode || 'NOT AVAILABLE'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShareReferral} style={[styles.shareBtn, { backgroundColor: colors.primary }]}>
+              <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 12 }}>SHARE</Text>
             </TouchableOpacity>
           </View>
-        )}
+        </AnimatedCard>
 
-        {user?.savedAddresses?.length ? (
-          user.savedAddresses.map((addr) => (
-            <View key={addr._id} style={styles.addressRow}>
-              <Text style={styles.addressIcon}>{LABEL_ICONS[addr.label] || '📍'}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.addressLabel}>{addr.label}</Text>
-                <Text style={styles.addressText}>{addr.address}</Text>
-              </View>
-              <TouchableOpacity onPress={() => removeAddress(addr._id)}>
-                <Text style={styles.removeText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        ) : (
-          !showAddForm && <Text style={styles.emptyText}>No saved addresses yet.</Text>
-        )}
-
+        {/* Settings Navigation Menu */}
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('History', { initialTab: 'rides' })}>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('History')}>
             <Text style={styles.menuIcon}>🏍️</Text>
-            <Text style={styles.menuLabel}>Ride History</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Trips & Bookings History</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('History', { initialTab: 'parcels' })}>
-            <Text style={styles.menuIcon}>📦</Text>
-            <Text style={styles.menuLabel}>Parcel History</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Wallet')}>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Wallet')}>
             <Text style={styles.menuIcon}>💳</Text>
-            <Text style={styles.menuLabel}>Wallet Balance & Settle</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Payments & Wallet</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Offers')}>
-            <Text style={styles.menuIcon}>🎁</Text>
-            <Text style={styles.menuLabel}>Offers & Referrals</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Safety')}>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Safety')}>
             <Text style={styles.menuIcon}>🛡️</Text>
-            <Text style={styles.menuLabel}>Safety Center (SOS)</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Safety Center</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Claims')}>
-            <Text style={styles.menuIcon}>⚖️</Text>
-            <Text style={styles.menuLabel}>Grievances & Claims</Text>
-            <Text style={styles.chevron}>›</Text>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Security')}>
+            <Text style={styles.menuIcon}>🔒</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Account Security & PIN</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Settings')}>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Settings')}>
             <Text style={styles.menuIcon}>⚙️</Text>
-            <Text style={styles.menuLabel}>Settings</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>System & UI Settings</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={handleSupport}>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Claims')}>
+            <Text style={styles.menuIcon}>⚖️</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Claims & Grievance Center</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.menuRow, { borderBottomColor: colors.border }]} onPress={() => navigation.navigate('Help')}>
             <Text style={styles.menuIcon}>🎧</Text>
-            <Text style={styles.menuLabel}>Help & Support Center</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>Help & FAQs</Text>
+            <Text style={{ color: colors.textLight }}>›</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Social Media Row */}
-        <Text style={styles.socialHeader}>Connect with us</Text>
+        {/* Social Media Links */}
+        <Text style={[styles.socialHeader, { color: colors.textLight }]}>Connect with us</Text>
         <View style={styles.socialRow}>
           {[
             { platform: 'whatsapp', icon: '💬' },
@@ -283,7 +251,7 @@ export default function ProfileScreen({ navigation }) {
           ].map((item) => (
             <TouchableOpacity
               key={item.platform}
-              style={[styles.socialIconWrap, { backgroundColor: COLORS.cardBg }]}
+              style={[styles.socialIconWrap, { backgroundColor: colors.cardBg }]}
               onPress={() => handleSocialLink(item.platform)}
             >
               <Text style={{ fontSize: 18 }}>{item.icon}</Text>
@@ -291,66 +259,90 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Log Out</Text>
+        <TouchableOpacity style={[styles.logoutButton, { borderColor: colors.red }]} onPress={handleLogout}>
+          <Text style={[styles.logoutText, { color: colors.red }]}>Log Out of PrinsGo</Text>
         </TouchableOpacity>
       </ScrollView>
+
       <BottomNav active="Profile" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: COLORS.background },
-  container: { flex: 1, backgroundColor: COLORS.background },
-  avatarCircle: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primary,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
+  screen: { flex: 1 },
+  container: { flex: 1 },
+
+  profileHeaderCard: { padding: 18, marginBottom: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  avatarTouch: { position: 'relative' },
+  avatar: { width: 64, height: 64, borderRadius: 32 },
+  editBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
-  avatarInitial: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
-  phone: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2 },
-  editLink: { marginTop: 10 },
-  editLinkText: { color: COLORS.textPrimary, fontWeight: '600' },
-  label: { fontSize: 13, color: COLORS.textPrimary, marginBottom: 6, marginTop: 12, fontWeight: '600' },
-  input: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 15, color: COLORS.textPrimary,
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  profileName: { fontWeight: '800' },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  rowButtons: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  primaryButton: { flex: 1, backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  primaryButtonText: { color: COLORS.textPrimary, fontWeight: '700' },
-  secondaryButton: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  secondaryButtonText: { color: COLORS.textSecondary, fontWeight: '600' },
-  card: { backgroundColor: COLORS.cardBg, borderRadius: 12, padding: 16, marginTop: 24 },
-  cardLabel: { fontSize: 12, color: COLORS.textSecondary },
-  referralCode: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 4, letterSpacing: 1 },
-  cardSub: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 28, marginBottom: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
-  addLink: { color: COLORS.textPrimary, fontWeight: '600' },
-  addForm: { backgroundColor: COLORS.cardBg, borderRadius: 12, padding: 14, marginBottom: 14 },
-  labelRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  labelChip: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 12 },
-  labelChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  labelChipText: { fontSize: 13, color: COLORS.textSecondary, textTransform: 'capitalize' },
-  labelChipTextActive: { color: COLORS.textPrimary, fontWeight: '600' },
-  addressRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 10 },
-  addressIcon: { fontSize: 18 },
-  addressLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary, textTransform: 'capitalize' },
-  addressText: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-  removeText: { color: COLORS.red, fontSize: 12, fontWeight: '600' },
-  emptyText: { color: COLORS.textLight, fontSize: 13, marginBottom: 10 },
-  logoutButton: { borderWidth: 1, borderColor: COLORS.red, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 32, marginBottom: 20 },
-  logoutText: { color: COLORS.red, fontWeight: '700' },
-  socialHeader: { fontSize: 13, color: COLORS.textLight, fontWeight: '700', textTransform: 'uppercase', marginTop: 28, marginBottom: 12, textAlign: 'center' },
+  badgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  profileSub: { fontSize: 14, marginTop: 4, fontWeight: '500' },
+  profileEmail: { fontSize: 12, marginTop: 2 },
+  editProfileBtn: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+
+  addressSummaryCard: { padding: 16, marginBottom: 10 },
+  sectionHeading: { fontSize: 14, fontWeight: '800' },
+
+  referralCard: { padding: 18, marginVertical: 14 },
+  referralDesc: { fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 12 },
+  codeRow: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 6,
+    alignItems: 'center',
+  },
+  codeText: { fontSize: 16, fontWeight: '900', letterSpacing: 1.5, marginLeft: 8 },
+  shareBtn: { borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 },
+
+  menuSection: { marginTop: 14 },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  menuIcon: { fontSize: 18, width: 28 },
+  menuLabel: { flex: 1, fontSize: 14, fontWeight: '600' },
+
+  socialHeader: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', marginTop: 28, marginBottom: 12, textAlign: 'center', letterSpacing: 0.5 },
   socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 14 },
   socialIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  menuSection: { marginTop: 28 },
-  menuRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 12,
+
+  logoutButton: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 20,
   },
-  menuIcon: { fontSize: 18, width: 24 },
-  menuLabel: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '500' },
-  chevron: { color: COLORS.textLight, fontSize: 18 },
+  logoutText: { fontWeight: '700', fontSize: 14 },
 });
