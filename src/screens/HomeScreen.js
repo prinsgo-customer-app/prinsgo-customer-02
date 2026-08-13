@@ -16,12 +16,45 @@ import { useLocalization } from '../context/LocalizationContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { getActiveRide, getRideHistory } from '../api/rides';
 import { getActiveParcels } from '../api/parcels';
-import { getBanners, getToggles } from '../api/auth';
+import { getBanners, getToggles, getSettings } from '../api/auth';
 import BottomNav from '../components/BottomNav';
 import AnimatedCard from '../components/AnimatedCard';
 
 
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
+
+const DEFAULT_EXPLORE_LOCATIONS = [
+  {
+    name: 'Bandhavgarh National Park',
+    city: 'Umaria',
+    desc: 'Famous royal Bengal tiger sanctuary nestled in Vindhya hills.',
+    emoji: '🐅',
+  },
+  {
+    name: 'Ghughwa Rashtriya Udyan',
+    city: 'Dindori',
+    desc: 'Incredible national plant fossil park dating back 6.5 million years.',
+    emoji: '🦖',
+  },
+  {
+    name: 'Bhedaghat Marble Rocks',
+    city: 'Jabalpur',
+    desc: 'Breathtaking gorges of marble sculpted by Narmada River.',
+    emoji: '⛰️',
+  },
+  {
+    name: 'Kanha National Park',
+    city: 'Mandla',
+    desc: 'Vast scenic preserve harboring rare swamp deer and barasingha.',
+    emoji: '🦌',
+  },
+  {
+    name: 'Amarkantak Source of Narmada',
+    city: 'Anuppur',
+    desc: 'The unique holy meeting point of Satpura & Vindhya mountain ranges.',
+    emoji: '🕉️',
+  },
+];
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -41,6 +74,7 @@ export default function HomeScreen({ navigation }) {
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [exploreSights, setExploreSights] = useState(DEFAULT_EXPLORE_LOCATIONS);
 
   useEffect(() => {
     (async () => {
@@ -93,9 +127,10 @@ export default function HomeScreen({ navigation }) {
 
   const loadAdminConfig = async () => {
     try {
-      const [bannersRes, togglesRes] = await Promise.all([
-        getBanners(),
-        getToggles(),
+      const [bannersRes, togglesRes, settingsRes] = await Promise.all([
+        getBanners().catch(() => ({ data: { banners: [] } })),
+        getToggles().catch(() => ({ data: { toggles: [] } })),
+        getSettings().catch(() => ({ data: { settings: {} } })),
       ]);
 
       setBanners(bannersRes.data?.banners || []);
@@ -109,6 +144,12 @@ export default function HomeScreen({ navigation }) {
       if (parcelToggle) setParcelEnabled(parcelToggle.isEnabled);
       if (maintenanceToggle && maintenanceToggle.isEnabled) {
         setIsMaintenance(true);
+      }
+
+      // Fallback location providers / explore sights from admin panel configuration
+      const settings = settingsRes.data?.settings || {};
+      if (settings.exploreLocations && Array.isArray(settings.exploreLocations) && settings.exploreLocations.length > 0) {
+        setExploreSights(settings.exploreLocations);
       }
 
       // Default mode adjustment if one is disabled
@@ -342,14 +383,71 @@ export default function HomeScreen({ navigation }) {
             <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>💼</Text></View>
             <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Work</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Offers')}>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🎁</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Offers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Safety')}>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🛡️</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Safety</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('History')}>
-            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🕓</Text></View>
-            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>History</Text>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>📋</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Bookings</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Wallet')}>
             <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>💳</Text></View>
             <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Wallet</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Claims')}>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>⚖️</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Claims</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Help')}>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🎧</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Help</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Explore Your City Section */}
+        <View style={[styles.section, { marginTop: 24, marginBottom: 14 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontSize: 16 * fontSizeMultiplier, marginBottom: 4 }]}>
+            Explore Your City 🗺️
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 12 }}>
+            Configure and discover famous sights powered by Admin panel
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 14 }}
+          >
+            {exploreSights.map((place, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.exploreCard,
+                  { backgroundColor: colors.cardBg, borderColor: colors.border },
+                ]}
+              >
+                <View style={[styles.exploreIconWrap, { backgroundColor: colors.background }]}>
+                  <Text style={{ fontSize: 24 }}>{place.emoji || '📍'}</Text>
+                </View>
+                <Text style={[styles.exploreName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {place.name}
+                </Text>
+                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
+                  📍 {place.city || 'Madhya Pradesh'}
+                </Text>
+                <Text style={[styles.exploreDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+                  {place.desc || place.description}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
         {recentBookings.length > 0 && (
@@ -476,6 +574,24 @@ const styles = StyleSheet.create({
   recentDate: { fontSize: 12, marginTop: 2 },
   recentFare: { fontSize: 14, fontWeight: '700' },
   recentStatus: { fontSize: 11, fontWeight: '700', textTransform: 'capitalize', marginTop: 2 },
+
+  // Explore Your City styles
+  exploreCard: {
+    width: 200,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+  },
+  exploreIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  exploreName: { fontSize: 14, fontWeight: '700' },
+  exploreDesc: { fontSize: 11, marginTop: 4, lineHeight: 15 },
 
   // Maintenance Style
   maintenanceCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },

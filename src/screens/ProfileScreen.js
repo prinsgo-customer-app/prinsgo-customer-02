@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile, addAddress, deleteAddress, getSettings } from '../api/auth';
@@ -31,6 +32,7 @@ export default function ProfileScreen({ navigation }) {
   // Dynamic support settings
   const [supportPhone, setSupportPhone] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
+  const [adminSettings, setAdminSettings] = useState(null);
 
   useEffect(() => {
     fetchSupportSettings();
@@ -43,6 +45,7 @@ export default function ProfileScreen({ navigation }) {
       if (settings) {
         setSupportPhone(settings.supportPhone || '');
         setSupportEmail(settings.supportEmail || '');
+        setAdminSettings(settings);
       }
     } catch (err) {
       setSupportPhone('9999999999');
@@ -107,11 +110,21 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleSupport = () => {
-    Alert.alert(
-      'Support & Help',
-      `For any issues, please reach out to us:\n\n📧 Email: ${supportEmail || 'support@prinsgo.com'}\n📞 Call: ${supportPhone || '9999999999'}`,
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('Help');
+  };
+
+  const handleSocialLink = (platform) => {
+    const urls = {
+      whatsapp: adminSettings?.whatsappUrl || adminSettings?.whatsappNumber || 'https://wa.me/918629995010',
+      instagram: adminSettings?.instagramUrl || 'https://instagram.com/prinsgo',
+      youtube: adminSettings?.youtubeUrl || 'https://youtube.com/@prinsgo',
+      facebook: adminSettings?.facebookUrl || 'https://facebook.com/prinsgo',
+      twitter: adminSettings?.twitterUrl || 'https://twitter.com/prinsgo',
+      linkedin: adminSettings?.linkedinUrl || 'https://linkedin.com/company/prinsgo',
+    };
+    Linking.openURL(urls[platform]).catch(() => {
+      Alert.alert('Link Error', `Could not open ${platform} channel.`);
+    });
   };
 
   return (
@@ -227,7 +240,22 @@ export default function ProfileScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Wallet')}>
             <Text style={styles.menuIcon}>💳</Text>
-            <Text style={styles.menuLabel}>Wallet</Text>
+            <Text style={styles.menuLabel}>Wallet Balance & Settle</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Offers')}>
+            <Text style={styles.menuIcon}>🎁</Text>
+            <Text style={styles.menuLabel}>Offers & Referrals</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Safety')}>
+            <Text style={styles.menuIcon}>🛡️</Text>
+            <Text style={styles.menuLabel}>Safety Center (SOS)</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Claims')}>
+            <Text style={styles.menuIcon}>⚖️</Text>
+            <Text style={styles.menuLabel}>Grievances & Claims</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Settings')}>
@@ -235,19 +263,32 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.menuLabel}>Settings</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('About')}>
-            <Text style={styles.menuIcon}>ℹ️</Text>
-            <Text style={styles.menuLabel}>About PrinsGo</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuRow}
-            onPress={handleSupport}
-          >
+          <TouchableOpacity style={styles.menuRow} onPress={handleSupport}>
             <Text style={styles.menuIcon}>🎧</Text>
-            <Text style={styles.menuLabel}>Support</Text>
+            <Text style={styles.menuLabel}>Help & Support Center</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Social Media Row */}
+        <Text style={styles.socialHeader}>Connect with us</Text>
+        <View style={styles.socialRow}>
+          {[
+            { platform: 'whatsapp', icon: '💬' },
+            { platform: 'instagram', icon: '📸' },
+            { platform: 'youtube', icon: '📺' },
+            { platform: 'facebook', icon: '👤' },
+            { platform: 'twitter', icon: '🐦' },
+            { platform: 'linkedin', icon: '💼' },
+          ].map((item) => (
+            <TouchableOpacity
+              key={item.platform}
+              style={[styles.socialIconWrap, { backgroundColor: COLORS.cardBg }]}
+              onPress={() => handleSocialLink(item.platform)}
+            >
+              <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -301,6 +342,9 @@ const styles = StyleSheet.create({
   emptyText: { color: COLORS.textLight, fontSize: 13, marginBottom: 10 },
   logoutButton: { borderWidth: 1, borderColor: COLORS.red, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 32, marginBottom: 20 },
   logoutText: { color: COLORS.red, fontWeight: '700' },
+  socialHeader: { fontSize: 13, color: COLORS.textLight, fontWeight: '700', textTransform: 'uppercase', marginTop: 28, marginBottom: 12, textAlign: 'center' },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 14 },
+  socialIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   menuSection: { marginTop: 28 },
   menuRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 14,

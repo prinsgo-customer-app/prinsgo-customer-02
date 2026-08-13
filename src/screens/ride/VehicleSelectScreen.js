@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { estimateFare, bookRide } from '../../api/rides';
 import { COLORS } from '../../utils/theme';
+import AnimatedCard from '../../components/AnimatedCard';
 
 const VEHICLE_LABELS = {
   bike: { label: 'Bike', icon: '🏍️' },
@@ -122,29 +123,31 @@ export default function VehicleSelectScreen({ route, navigation }) {
         data={estimates}
         keyExtractor={(item) => item.vehicleType}
         renderItem={({ item }) => (
-          <TouchableOpacity
+          <AnimatedCard
             style={[
               styles.card,
               selected === item.vehicleType && styles.selected,
             ]}
             onPress={() => setSelected(item.vehicleType)}
           >
-            <Text style={styles.icon}>
-              {VEHICLE_LABELS[item.vehicleType]?.icon || '🚕'}
-            </Text>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>
-                {VEHICLE_LABELS[item.vehicleType]?.label || item.vehicleType}
+            <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+              <Text style={styles.icon}>
+                {VEHICLE_LABELS[item.vehicleType]?.icon || '🚕'}
               </Text>
 
-              <Text style={styles.duration}>{item.durationMin || 0} min</Text>
-            </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>
+                  {VEHICLE_LABELS[item.vehicleType]?.label || item.vehicleType}
+                </Text>
 
-            <Text style={styles.price}>
-              ₹{Math.round(item.totalFare || 0)}
-            </Text>
-          </TouchableOpacity>
+                <Text style={styles.duration}>{item.durationMin || 0} min</Text>
+              </View>
+
+              <Text style={styles.price}>
+                ₹{Math.round(item.totalFare || 0)}
+              </Text>
+            </View>
+          </AnimatedCard>
         )}
       />
 
