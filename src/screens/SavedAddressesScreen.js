@@ -35,12 +35,26 @@ export default function SavedAddressesScreen({ navigation }) {
     }
 
     // Check for duplicate address string
-    const isDuplicate = user?.savedAddresses?.some(
+    const isDuplicateAddress = user?.savedAddresses?.some(
       (item) => item.address.toLowerCase().trim() === address.toLowerCase().trim() && item._id !== editingAddressId
     );
-    if (isDuplicate) {
+    if (isDuplicateAddress) {
       Alert.alert('Duplicate Address', 'This address is already in your saved addresses list.');
       return;
+    }
+
+    // Prevent duplicate Home or Work labels (Max 1 of each)
+    if (label === 'home' || label === 'work') {
+      const isDuplicateLabel = user?.savedAddresses?.some(
+        (item) => item.label === label && item._id !== editingAddressId
+      );
+      if (isDuplicateLabel) {
+        Alert.alert(
+          'Duplicate Category',
+          `You already have a saved ${label === 'home' ? 'Home' : 'Work'} address. Please edit or delete the existing one instead.`
+        );
+        return;
+      }
     }
 
     setSaving(true);
