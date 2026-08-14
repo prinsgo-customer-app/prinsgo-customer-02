@@ -5,19 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-
     "splash": {
       "backgroundColor": "#0A0F24"
     },
-
     "assetBundlePatterns": [
       "**/*"
     ],
-
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
       "package": "com.prinsgo.customer",
       "permissions": [
@@ -28,6 +24,11 @@
         "googleMaps": {
           "apiKey": "AIzaSyBkSCVExxM8H0cOFxkykMaMO_h0Hu8A4SI"
         }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bda9c24b-65b4-4d25-87a0-86ea9afdf040"
       }
     }
   }
