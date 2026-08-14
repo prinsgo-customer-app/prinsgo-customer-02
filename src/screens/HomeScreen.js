@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Dimensions,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +21,7 @@ import { getBanners, getToggles, getSettings } from '../api/auth';
 import BottomNav from '../components/BottomNav';
 import AnimatedCard from '../components/AnimatedCard';
 
+const { width } = Dimensions.get('window');
 
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
 
@@ -71,12 +73,26 @@ export default function HomeScreen({ navigation }) {
 
   // Admin dynamic integrations
   const [banners, setBanners] = useState([]);
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const bannerScrollRef = useRef(null);
+
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
+  const [rentalsEnabled, setRentalsEnabled] = useState(true);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [exploreSights, setExploreSights] = useState(DEFAULT_EXPLORE_LOCATIONS);
 
+  // Home remote contents
+  const [homeTitle, setHomeTitle] = useState('PrinsGo Premium');
+  const [homeSubtitle, setHomeSubtitle] = useState('Your ride, parcel & rentals partner');
+
+  // Suppress unused warning of home remote settings
+  const suppressUnusedContents = () => {
+    console.log(homeTitle, homeSubtitle);
+  };
+
   useEffect(() => {
+    suppressUnusedContents();
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -96,6 +112,20 @@ export default function HomeScreen({ navigation }) {
     loadRecentBookings();
     loadAdminConfig();
   }, []);
+
+  // Auto scroll banners
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      let nextIndex = activeBannerIndex + 1;
+      if (nextIndex >= banners.length) {
+        nextIndex = 0;
+      }
+      setActiveBannerIndex(nextIndex);
+      bannerScrollRef.current?.scrollTo({ x: nextIndex * (width - 40), animated: true });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [activeBannerIndex, banners]);
 
   const checkActiveTrips = async () => {
     try {
@@ -133,28 +163,35 @@ export default function HomeScreen({ navigation }) {
         getSettings().catch(() => ({ data: { settings: {} } })),
       ]);
 
-      setBanners(bannersRes.data?.banners || []);
+      const fetchedBanners = bannersRes.data?.banners || [];
+      setBanners(fetchedBanners);
 
       const toggles = togglesRes.data?.toggles || [];
-      const rideToggle = toggles.find((t) => t.key === 'ride_booking');
-      const parcelToggle = toggles.find((t) => t.key === 'parcel_booking');
+      const rideToggle = toggles.find((t) => t.key === 'ride_booking' || t.key === 'ride');
+      const parcelToggle = toggles.find((t) => t.key === 'parcel_booking' || t.key === 'parcel');
+      const rentalsToggle = toggles.find((t) => t.key === 'rentals');
       const maintenanceToggle = toggles.find((t) => t.key === 'maintenance_mode');
 
       if (rideToggle) setRideEnabled(rideToggle.isEnabled);
       if (parcelToggle) setParcelEnabled(parcelToggle.isEnabled);
+      if (rentalsToggle) setRentalsEnabled(rentalsToggle.isEnabled);
       if (maintenanceToggle && maintenanceToggle.isEnabled) {
         setIsMaintenance(true);
       }
 
-      // Fallback location providers / explore sights from admin panel configuration
       const settings = settingsRes.data?.settings || {};
       if (settings.exploreLocations && Array.isArray(settings.exploreLocations) && settings.exploreLocations.length > 0) {
         setExploreSights(settings.exploreLocations);
       }
 
+      if (settings.appName) setHomeTitle(settings.appName);
+      if (settings.appTagline) setHomeSubtitle(settings.appTagline);
+
       // Default mode adjustment if one is disabled
       if (rideToggle && !rideToggle.isEnabled && parcelToggle?.isEnabled) {
         setMode('parcel');
+      } else if (rideToggle && !rideToggle.isEnabled && !parcelToggle?.isEnabled && rentalsToggle?.isEnabled) {
+        setMode('rentals');
       }
     } catch (err) {
       // ignore configuration fetch errors
@@ -220,7 +257,7 @@ export default function HomeScreen({ navigation }) {
           lng: saved.lng,
         },
       });
-    } else {
+    } else if (mode === 'parcel') {
       if (!parcelEnabled) {
         Alert.alert('Unavailable', 'Parcel delivery is temporarily disabled by admin.');
         return;
@@ -229,7 +266,19 @@ export default function HomeScreen({ navigation }) {
         pickup: { address: 'Current Location', lat: currentLocation.lat, lng: currentLocation.lng },
         drop: { address: saved.address, lat: saved.lat, lng: saved.lng },
       });
+    } else {
+      if (!rentalsEnabled) {
+        Alert.alert('Unavailable', 'Rentals service is temporarily disabled by admin.');
+        return;
+      }
+      navigation.navigate('Rentals');
     }
+  };
+
+  const handleScroll = (event) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollPosition / (width - 40));
+    setActiveBannerIndex(index);
   };
 
   if (isMaintenance) {
@@ -252,6 +301,23 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
+  const activeBanners = banners.length > 0 ? banners : [
+    {
+      _id: 'fallback_1',
+      title: 'Flat 20% OFF on your first ride booking!',
+      linkValue: 'PRINSGO20',
+      tag: 'WELCOME OFFER',
+      emoji: '⚡'
+    },
+    {
+      _id: 'fallback_2',
+      title: 'Ship files, items & packages instantly',
+      linkValue: 'PRINSPARCEL',
+      tag: 'PARCEL DELIVERY',
+      emoji: '📦'
+    }
+  ];
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
@@ -261,7 +327,9 @@ export default function HomeScreen({ navigation }) {
             <Text style={[styles.logo, { color: colors.textPrimary }]}>
               Prins<Text style={{ color: colors.primary }}>Go</Text>
             </Text>
-            <Text style={[styles.greeting, { color: colors.textSecondary }]}>Hi {user?.name?.split(' ')[0] || ''} 👋</Text>
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
+              Good Morning, {user?.name?.split(' ')[0] || 'User'} 👋
+            </Text>
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.cardBg }]} onPress={() => navigation.navigate('Notifications')}>
@@ -273,20 +341,35 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Current Location Pill Bar */}
+        <View style={styles.locationPillBar}>
+          <Text style={[styles.locationPillText, { color: colors.textSecondary }]} numberOfLines={1}>
+            📍 {locationLoading ? 'Getting your location...' : locationError ? 'Location Error' : 'Current Location unlocked'}
+          </Text>
+          <TouchableOpacity style={[styles.locationChangeBtn, { backgroundColor: colors.cardBg }]} onPress={retryLocation}>
+            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>CHANGE</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Dynamic Banners Slider */}
-        {banners.length > 0 ? (
+        <View style={styles.carouselContainer}>
           <ScrollView
+            ref={bannerScrollRef}
             horizontal
+            pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.bannersScroll}
-            snapToInterval={280}
-            decelerationRate="fast"
+            onMomentumScrollEnd={handleScroll}
+            contentContainerStyle={{ width: (width - 40) * activeBanners.length }}
           >
-            {banners.map((banner) => (
-              <View key={banner._id} style={[styles.banner, { backgroundColor: colors.textPrimary }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.bannerTag, { color: colors.primary }]}>SPECIAL OFFER</Text>
-                  <Text style={[styles.bannerTitle, { color: colors.background }]}>{banner.title}</Text>
+            {activeBanners.map((banner) => (
+              <View key={banner._id} style={[styles.banner, { width: width - 40, backgroundColor: colors.textPrimary }]}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.bannerTag, { color: colors.primary }]}>
+                    {banner.tag || 'SPECIAL OFFER'}
+                  </Text>
+                  <Text style={[styles.bannerTitle, { color: colors.background }]} numberOfLines={2}>
+                    {banner.title}
+                  </Text>
                   {banner.linkValue ? (
                     <View style={styles.couponPill}>
                       <Text style={[styles.couponText, { color: colors.background }]}>{banner.linkValue}</Text>
@@ -296,44 +379,70 @@ export default function HomeScreen({ navigation }) {
                 {banner.imageUrl ? (
                   <Image source={{ uri: banner.imageUrl }} style={styles.bannerImage} />
                 ) : (
-                  <Text style={styles.bannerEmoji}>🎁</Text>
+                  <Text style={styles.bannerEmoji}>{banner.emoji || '🎁'}</Text>
                 )}
               </View>
             ))}
           </ScrollView>
-        ) : (
-          /* Fallback Placeholder Banner */
-          <View style={[styles.banner, { marginHorizontal: 20, backgroundColor: colors.textPrimary }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.bannerTag, { color: colors.primary }]}>WELCOME TO PRINSGO</Text>
-              <Text style={[styles.bannerTitle, { color: colors.background }]}>Fast, Safe & reliable doorstep delivery.</Text>
-            </View>
-            <Text style={styles.bannerEmoji}>⚡</Text>
+          <View style={styles.dotIndicatorRow}>
+            {activeBanners.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  { backgroundColor: i === activeBannerIndex ? colors.primary : colors.textLight },
+                ]}
+              />
+            ))}
           </View>
-        )}
+        </View>
 
-        {/* Ride / Parcel tabs */}
-        <View style={styles.tabRow}>
-          {rideEnabled ? (
-            <TouchableOpacity
-              style={[styles.tab, mode === 'ride' && { borderBottomColor: colors.primary }]}
-              onPress={() => setMode('ride')}
-            >
-              <Text style={[styles.tabText, mode === 'ride' ? { color: colors.textPrimary, fontWeight: '700' } : { color: colors.textLight }]}>
-                🚗 {t('ride')}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-          {parcelEnabled ? (
-            <TouchableOpacity
-              style={[styles.tab, mode === 'parcel' && { borderBottomColor: colors.primary }]}
-              onPress={() => setMode('parcel')}
-            >
-              <Text style={[styles.tabText, mode === 'parcel' ? { color: colors.textPrimary, fontWeight: '700' } : { color: colors.textLight }]}>
-                📦 {t('parcel')}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
+        {/* Premium Service Selector Cards */}
+        <View style={styles.serviceSelectionContainer}>
+          <Text style={[styles.sectionTitleHeader, { color: colors.textPrimary }]}>Our Services</Text>
+          <View style={styles.serviceSelectorRow}>
+            {rideEnabled && (
+              <TouchableOpacity
+                style={[
+                  styles.serviceSelectorCard,
+                  { backgroundColor: colors.cardBg, borderColor: mode === 'ride' ? colors.primary : colors.border },
+                ]}
+                onPress={() => setMode('ride')}
+              >
+                <Text style={styles.serviceSelectorIcon}>🚕</Text>
+                <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Ride</Text>
+                <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Book a fast trip</Text>
+              </TouchableOpacity>
+            )}
+
+            {parcelEnabled && (
+              <TouchableOpacity
+                style={[
+                  styles.serviceSelectorCard,
+                  { backgroundColor: colors.cardBg, borderColor: mode === 'parcel' ? colors.primary : colors.border },
+                ]}
+                onPress={() => setMode('parcel')}
+              >
+                <Text style={styles.serviceSelectorIcon}>📦</Text>
+                <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Parcel</Text>
+                <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Send items securely</Text>
+              </TouchableOpacity>
+            )}
+
+            {rentalsEnabled && (
+              <TouchableOpacity
+                style={[
+                  styles.serviceSelectorCard,
+                  { backgroundColor: colors.cardBg, borderColor: mode === 'rentals' ? colors.primary : colors.border },
+                ]}
+                onPress={() => setMode('rentals')}
+              >
+                <Text style={styles.serviceSelectorIcon}>🚗</Text>
+                <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Rentals</Text>
+                <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Hourly / Daily car</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {locationLoading ? (
@@ -347,33 +456,51 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         ) : null}
 
-        {/* Search box using AnimatedCard */}
+        {/* Quick Booking Premium Card */}
         <View style={{ paddingHorizontal: 20, marginVertical: 10 }}>
+          <Text style={[styles.sectionTitleHeader, { color: colors.textPrimary, marginBottom: 12 }]}>Where are you going?</Text>
           <AnimatedCard
             onPress={() => {
               if (!requireLocation()) return;
-              if (mode === 'ride' && !rideEnabled) {
-                Alert.alert('Unavailable', 'Ride booking is temporarily disabled by admin.');
-                return;
+              if (mode === 'ride') {
+                if (!rideEnabled) {
+                  Alert.alert('Unavailable', 'Ride booking is temporarily disabled.');
+                  return;
+                }
+                navigation.navigate('PlaceSearch', { mode: 'ride', currentLocation, field: 'drop' });
+              } else if (mode === 'parcel') {
+                if (!parcelEnabled) {
+                  Alert.alert('Unavailable', 'Parcel delivery is temporarily disabled.');
+                  return;
+                }
+                navigation.navigate('PlaceSearch', { mode: 'parcel', currentLocation, field: 'drop' });
+              } else {
+                if (!rentalsEnabled) {
+                  Alert.alert('Unavailable', 'Rentals are temporarily disabled.');
+                  return;
+                }
+                navigation.navigate('Rentals');
               }
-              if (mode === 'parcel' && !parcelEnabled) {
-                Alert.alert('Unavailable', 'Parcel delivery is temporarily disabled by admin.');
-                return;
-              }
-              navigation.navigate('PlaceSearch', { mode, currentLocation, field: 'drop' });
             }}
-            style={{ marginVertical: 0, padding: 18 }}
+            style={{ marginVertical: 0, padding: 18, borderWith: 1, borderColor: colors.border }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={[styles.pinDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.searchBoxText, { color: colors.textSecondary, fontSize: 15 * fontSizeMultiplier }]}>
-                {t('searchPlaceholder')}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textLight, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
+                  CHOOSE DESTINATION
+                </Text>
+                <Text style={[styles.searchBoxText, { color: colors.textSecondary, fontSize: 15 * fontSizeMultiplier, marginTop: 4 }]}>
+                  {t('searchPlaceholder')}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 18 }}>🔍</Text>
             </View>
           </AnimatedCard>
         </View>
 
-        {/* Quick access */}
+        {/* Quick Actions (2-row horizontal selector) */}
+        <Text style={[styles.sectionTitleHeader, { color: colors.textPrimary, paddingHorizontal: 20, marginTop: 14, marginBottom: -10 }]}>Quick Actions</Text>
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickItem} onPress={() => handleQuickAddress('home')}>
             <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🏠</Text></View>
@@ -410,6 +537,28 @@ export default function HomeScreen({ navigation }) {
             <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🎧</Text></View>
             <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Help</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Services Showcase Sections */}
+        <View style={styles.sectionShowcase}>
+          <Text style={[styles.sectionTitleHeader, { color: colors.textPrimary, marginBottom: 12 }]}>Explore Options</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+            <TouchableOpacity style={[styles.showcaseCard, { backgroundColor: colors.cardBg }]} onPress={() => navigation.navigate('PlaceSearch', { mode: 'ride', currentLocation })}>
+              <Text style={styles.showcaseEmoji}>⚡</Text>
+              <Text style={[styles.showcaseTitle, { color: colors.textPrimary }]}>Book Ride</Text>
+              <Text style={[styles.showcaseDesc, { color: colors.textSecondary }]}>Instant booking with verified drivers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.showcaseCard, { backgroundColor: colors.cardBg }]} onPress={() => navigation.navigate('ComingSoon', { title: 'Schedule Ride' })}>
+              <Text style={styles.showcaseEmoji}>📅</Text>
+              <Text style={[styles.showcaseTitle, { color: colors.textPrimary }]}>Schedule Trip</Text>
+              <Text style={[styles.showcaseDesc, { color: colors.textSecondary }]}>Set date & pick time in advance</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.showcaseCard, { backgroundColor: colors.cardBg }]} onPress={() => navigation.navigate('ComingSoon', { title: 'Multiple Stops Ride' })}>
+              <Text style={styles.showcaseEmoji}>📍</Text>
+              <Text style={[styles.showcaseTitle, { color: colors.textPrimary }]}>Multiple Stops</Text>
+              <Text style={[styles.showcaseDesc, { color: colors.textSecondary }]}>Add up to 3 intermediate halts</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
 
         {/* Explore Your City Section */}
@@ -513,15 +662,33 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { fontWeight: '700', fontSize: 16 },
 
-  bannersScroll: { paddingLeft: 20, paddingRight: 10, marginTop: 16, height: 160 },
+  locationPillBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+  locationPillText: { fontSize: 13, flex: 1 },
+  locationChangeBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+
+  carouselContainer: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    height: 165,
+  },
   banner: {
     flexDirection: 'row',
     borderRadius: 18,
-    width: 280,
-    marginRight: 14,
     padding: 18,
     alignItems: 'center',
     overflow: 'hidden',
+    height: 140,
   },
   bannerTag: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   bannerTitle: { fontSize: 16, fontWeight: '800', marginTop: 4, lineHeight: 21 },
@@ -532,13 +699,51 @@ const styles = StyleSheet.create({
   couponText: { fontWeight: '700', fontSize: 11, letterSpacing: 0.5 },
   bannerEmoji: { fontSize: 44, marginLeft: 8 },
   bannerImage: { width: 60, height: 60, borderRadius: 10, marginLeft: 8 },
-
-  tabRow: { flexDirection: 'row', marginHorizontal: 20, marginTop: 20, marginBottom: 6 },
-  tab: {
-    flex: 1, paddingVertical: 12, alignItems: 'center',
-    borderBottomWidth: 2, borderBottomColor: 'transparent',
+  dotIndicatorRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+    gap: 6,
   },
-  tabText: { fontSize: 15, fontWeight: '600' },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+
+  serviceSelectionContainer: {
+    paddingHorizontal: 20,
+    marginTop: 15,
+  },
+  sectionTitleHeader: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  serviceSelectorRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  serviceSelectorCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  serviceSelectorIcon: {
+    fontSize: 26,
+    marginBottom: 4,
+  },
+  serviceSelectorTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  serviceSelectorSubtitle: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 2,
+  },
 
   locationBanner: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 10, gap: 8,
@@ -553,7 +758,7 @@ const styles = StyleSheet.create({
   searchBoxText: { fontSize: 15 },
 
   quickRow: {
-    flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 10, marginBottom: 28,
+    flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 10, marginVertical: 14,
   },
   quickItem: { alignItems: 'center' },
   quickIconWrap: {
@@ -562,6 +767,29 @@ const styles = StyleSheet.create({
   },
   quickIcon: { fontSize: 22 },
   quickLabel: { fontSize: 12, fontWeight: '600' },
+
+  sectionShowcase: {
+    paddingHorizontal: 20,
+    marginVertical: 14,
+  },
+  showcaseCard: {
+    width: 140,
+    padding: 12,
+    borderRadius: 12,
+  },
+  showcaseEmoji: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  showcaseTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  showcaseDesc: {
+    fontSize: 10,
+    marginTop: 2,
+    lineHeight: 13,
+  },
 
   section: { paddingHorizontal: 20 },
   sectionHeaderRow: {
