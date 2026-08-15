@@ -33,7 +33,6 @@ import ClaimsScreen from '../screens/ClaimsScreen';
 import OffersScreen from '../screens/OffersScreen';
 import SafetyScreen from '../screens/SafetyScreen';
 import HelpScreen from '../screens/HelpScreen';
-import RentalsScreen from '../screens/RentalsScreen';
 
 import BottomNav from '../components/BottomNav';
 
@@ -111,7 +110,6 @@ function MainStack() {
       <Stack.Screen name="Offers" component={OffersScreen} />
       <Stack.Screen name="Safety" component={SafetyScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
-      <Stack.Screen name="Rentals" component={RentalsScreen} />
     </Stack.Navigator>
   );
 }

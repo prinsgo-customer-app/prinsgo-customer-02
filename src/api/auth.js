@@ -14,11 +14,16 @@ export const addAddress = (data) => apiClient.post('/auth/address', data);
 export const deleteAddress = (addressId) =>
   apiClient.delete(`/auth/address/${addressId}`);
 
-// Customer read-only APIs for Admin settings, Banners, Feature Toggles, and Notifications (Option A)
-export const getSettings = () => apiClient.get('/auth/settings');
+// Customer read-only APIs for Admin settings, Banners, Feature Toggles, and Notifications
+const getAdminHeaders = () => {
+  const secret = process.env.EXPO_PUBLIC_ADMIN_SECRET || process.env.ADMIN_SECRET || 'PrinsGo_Session_Secret_2026_#AbC456xyz';
+  return secret ? { headers: { 'x-admin-secret': secret } } : {};
+};
 
-export const getToggles = () => apiClient.get('/auth/toggles');
+export const getSettings = () => apiClient.get('/admin/settings', getAdminHeaders());
 
-export const getBanners = () => apiClient.get('/auth/banners');
+export const getToggles = () => apiClient.get('/admin/toggles', getAdminHeaders());
 
-export const getNotifications = () => apiClient.get('/auth/notifications');
+export const getBanners = () => apiClient.get('/admin/banners', getAdminHeaders());
+
+export const getNotifications = () => apiClient.get('/notifications');
