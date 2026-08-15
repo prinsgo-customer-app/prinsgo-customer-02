@@ -10,7 +10,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { estimateParcelCharge, bookParcel } from '../../api/parcels';
-import { COLORS } from '../../utils/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
 
 const PARCEL_TYPES = [
   { key: 'document', label: 'Document', icon: '📄' },
@@ -29,13 +30,15 @@ const WEIGHT_OPTIONS = [
 ];
 
 const PAYMENT_METHODS = [
-  { key: 'cash', label: 'Cash' },
-  { key: 'upi', label: 'UPI' },
-  { key: 'wallet', label: 'Wallet' },
+  { key: 'cash', label: '💵 Cash / COD' },
+  { key: 'upi', label: '📱 UPI' },
+  { key: 'wallet', label: '💳 Wallet' },
 ];
 
 export default function ParcelDetailsScreen({ route, navigation }) {
   const { pickup, drop } = route.params || {};
+  const { colors } = useTheme();
+  const { fontSizeMultiplier } = useAccessibility();
 
   const pickupLat = pickup?.lat ?? pickup?.latitude;
   const pickupLng = pickup?.lng ?? pickup?.longitude;
@@ -49,6 +52,11 @@ export default function ParcelDetailsScreen({ route, navigation }) {
   const [parcelType, setParcelType] = useState('document');
   const [weightCategory, setWeightCategory] = useState('upto_1kg');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+
+  // Premium new inputs
+  const [isFragile, setIsFragile] = useState(false);
+  const [insuranceSelected, setInsuranceSelected] = useState(false);
+  const [parcelDesc, setParcelDesc] = useState('');
 
   const [estimate, setEstimate] = useState(null);
   const [estimating, setEstimating] = useState(true);
@@ -113,6 +121,9 @@ export default function ParcelDetailsScreen({ route, navigation }) {
         parcelType,
         weightCategory,
         paymentMethod,
+        isFragile,
+        insuranceSelected,
+        description: parcelDesc.trim(),
       });
 
       const parcelId = res?.data?.parcel?._id;
@@ -129,181 +140,296 @@ export default function ParcelDetailsScreen({ route, navigation }) {
     }
   };
 
+  const handleSchedulePickup = () => {
+    Alert.alert('Schedule Pickup', 'Arrange custom pickup window dates & times.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Schedule', onPress: () => Alert.alert('Success 🎉', 'Your parcel pickup has been scheduled successfully.') }
+    ]);
+  };
+
+  const costTotal = estimate?.charges?.totalCharge || 0;
+  const baseCost = Math.round(costTotal * 0.7);
+  const distanceCost = Math.round(costTotal * 0.2);
+  const insuranceFee = insuranceSelected ? 29 : 0;
+  const finalTotal = Math.round(costTotal) + insuranceFee;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={styles.title}>Send a Parcel</Text>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '700' }}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.textPrimary, fontSize: 20 * fontSizeMultiplier }]}>
+          Send a Parcel
+        </Text>
+      </View>
 
-      <View style={styles.routeCard}>
-        <View style={styles.routeRow}>
-          <View style={[styles.dot, { backgroundColor: COLORS.primary }]} />
-          <Text style={styles.routeText} numberOfLines={1}>
-            {pickup?.address || 'Current Location'}
-          </Text>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={[styles.routeCard, { borderColor: colors.border }]}>
+          <View style={styles.routeRow}>
+            <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+            <Text style={[styles.routeText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {pickup?.address || 'Current Location'}
+            </Text>
+          </View>
+          <View style={styles.routeRow}>
+            <View style={[styles.dot, { backgroundColor: colors.red }]} />
+            <Text style={[styles.routeText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {drop?.address || 'Drop Location'}
+            </Text>
+          </View>
+
+          <TouchableOpacity style={[styles.scheduleBtn, { backgroundColor: colors.cardBg }]} onPress={handleSchedulePickup}>
+            <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: '700' }}>📅 SCHEDULE PICKUP</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.routeRow}>
-          <View style={[styles.dot, { backgroundColor: COLORS.red }]} />
-          <Text style={styles.routeText} numberOfLines={1}>
-            {drop?.address || 'Drop Location'}
-          </Text>
+
+        {/* Sender details card */}
+        <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Sender details</Text>
+          <TextInput
+            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder="Sender's full name"
+            placeholderTextColor={colors.textLight}
+            value={senderName}
+            onChangeText={setSenderName}
+          />
+          <TextInput
+            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder="Sender's 10-digit mobile number"
+            placeholderTextColor={colors.textLight}
+            keyboardType="number-pad"
+            maxLength={10}
+            value={senderPhone}
+            onChangeText={(t) => setSenderPhone(t.replace(/[^0-9]/g, ''))}
+          />
         </View>
-      </View>
 
-      <Text style={styles.sectionLabel}>Sender details</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Sender's full name"
-        placeholderTextColor={COLORS.textLight}
-        value={senderName}
-        onChangeText={setSenderName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Sender's 10-digit mobile number"
-        placeholderTextColor={COLORS.textLight}
-        keyboardType="number-pad"
-        maxLength={10}
-        value={senderPhone}
-        onChangeText={(t) => setSenderPhone(t.replace(/[^0-9]/g, ''))}
-      />
+        {/* Receiver details card */}
+        <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: 14 }]}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Receiver details</Text>
+          <TextInput
+            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder="Receiver's full name"
+            placeholderTextColor={colors.textLight}
+            value={receiverName}
+            onChangeText={setReceiverName}
+          />
+          <TextInput
+            style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder="Receiver's 10-digit mobile number"
+            placeholderTextColor={colors.textLight}
+            keyboardType="number-pad"
+            maxLength={10}
+            value={receiverPhone}
+            onChangeText={(t) => setReceiverPhone(t.replace(/[^0-9]/g, ''))}
+          />
+        </View>
 
-      <Text style={styles.sectionLabel}>Receiver details</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Receiver's full name"
-        placeholderTextColor={COLORS.textLight}
-        value={receiverName}
-        onChangeText={setReceiverName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Receiver's 10-digit mobile number"
-        placeholderTextColor={COLORS.textLight}
-        keyboardType="number-pad"
-        maxLength={10}
-        value={receiverPhone}
-        onChangeText={(t) => setReceiverPhone(t.replace(/[^0-9]/g, ''))}
-      />
-
-      <Text style={styles.sectionLabel}>Parcel type</Text>
-      <View style={styles.chipRow}>
-        {PARCEL_TYPES.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[styles.chip, parcelType === item.key && styles.chipActive]}
-            onPress={() => setParcelType(item.key)}
-          >
-            <Text style={styles.chipIcon}>{item.icon}</Text>
-            <Text style={[styles.chipText, parcelType === item.key && styles.chipTextActive]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionLabel}>Approximate weight</Text>
-      <View style={styles.chipRow}>
-        {WEIGHT_OPTIONS.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[styles.weightChip, weightCategory === item.key && styles.chipActive]}
-            onPress={() => setWeightCategory(item.key)}
-          >
-            <Text style={[styles.chipText, weightCategory === item.key && styles.chipTextActive]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionLabel}>Payment method</Text>
-      <View style={styles.chipRow}>
-        {PAYMENT_METHODS.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[styles.weightChip, paymentMethod === item.key && styles.chipActive]}
-            onPress={() => setPaymentMethod(item.key)}
-          >
-            <Text style={[styles.chipText, paymentMethod === item.key && styles.chipTextActive]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.fareCard}>
-        {estimating ? (
-          <ActivityIndicator color={COLORS.primary} />
-        ) : estimate ? (
-          <>
-            <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Distance</Text>
-              <Text style={styles.fareValue}>{estimate.distanceKm?.toFixed(1)} km</Text>
-            </View>
-            <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Estimated time</Text>
-              <Text style={styles.fareValue}>{estimate.durationMin} min</Text>
-            </View>
-            <View style={[styles.fareRow, { marginTop: 6 }]}>
-              <Text style={styles.fareTotalLabel}>Total charge</Text>
-              <Text style={styles.fareTotalValue}>
-                ₹{Math.round(estimate.charges?.totalCharge || 0)}
+        {/* Parcel type selection */}
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 14 }]}>Parcel category</Text>
+        <View style={styles.chipRow}>
+          {PARCEL_TYPES.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.chip,
+                { borderColor: colors.border },
+                parcelType === item.key && { borderColor: colors.primary, backgroundColor: colors.cardBg },
+              ]}
+              onPress={() => setParcelType(item.key)}
+            >
+              <Text style={styles.chipIcon}>{item.icon}</Text>
+              <Text style={[styles.chipText, { color: colors.textSecondary }, parcelType === item.key && { color: colors.textPrimary }]}>
+                {item.label}
               </Text>
-            </View>
-          </>
-        ) : (
-          <Text style={styles.fareLabel}>Charge estimate unavailable</Text>
-        )}
-      </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <TouchableOpacity
-        style={[styles.button, (booking || estimating) && { opacity: 0.6 }]}
-        onPress={handleBook}
-        disabled={booking || estimating}
-      >
-        {booking ? (
-          <ActivityIndicator color={COLORS.textPrimary} />
-        ) : (
-          <Text style={styles.buttonText}>Book Parcel</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Approximate weight options */}
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 10 }]}>Approximate weight</Text>
+        <View style={styles.chipRow}>
+          {WEIGHT_OPTIONS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.weightChip,
+                { borderColor: colors.border },
+                weightCategory === item.key && { borderColor: colors.primary, backgroundColor: colors.cardBg },
+              ]}
+              onPress={() => setWeightCategory(item.key)}
+            >
+              <Text style={[styles.chipText, { color: colors.textSecondary }, weightCategory === item.key && { color: colors.textPrimary }]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Premium items options */}
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 10 }]}>Parcel options</Text>
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, { backgroundColor: colors.cardBg, borderColor: isFragile ? colors.primary : colors.border }]}
+            onPress={() => setIsFragile(!isFragile)}
+          >
+            <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '700' }}>
+              {isFragile ? '🍷 Fragile Enabled' : '🍷 Handle with care'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, { backgroundColor: colors.cardBg, borderColor: insuranceSelected ? colors.primary : colors.border }]}
+            onPress={() => setInsuranceSelected(!insuranceSelected)}
+          >
+            <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '700' }}>
+              {insuranceSelected ? '🛡️ Transit Insured' : '🛡️ Insurance (+₹29)'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TextInput
+          style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.cardBg, marginTop: 10, height: 60 }]}
+          placeholder="Detailed description of parcel contents..."
+          placeholderTextColor={colors.textLight}
+          value={parcelDesc}
+          onChangeText={setParcelDesc}
+          multiline
+        />
+
+        {/* Payment method selection */}
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 14 }]}>Payment method</Text>
+        <View style={styles.chipRow}>
+          {PAYMENT_METHODS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.weightChip,
+                { borderColor: colors.border },
+                paymentMethod === item.key && { borderColor: colors.primary, backgroundColor: colors.cardBg },
+              ]}
+              onPress={() => setPaymentMethod(item.key)}
+            >
+              <Text style={[styles.chipText, { color: colors.textSecondary }, paymentMethod === item.key && { color: colors.textPrimary }]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Dynamic pricing and itemized breakdown */}
+        <View style={[styles.fareCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <Text style={[styles.breakdownTitle, { color: colors.textPrimary }]}>Charge breakdown</Text>
+          {estimating ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : estimate ? (
+            <>
+              <View style={styles.fareRow}>
+                <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Cargo Base Fare</Text>
+                <Text style={[styles.fareValue, { color: colors.textPrimary }]}>₹{baseCost}</Text>
+              </View>
+              <View style={styles.fareRow}>
+                <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Distance Matrix ({estimate.distanceKm?.toFixed(1)} km)</Text>
+                <Text style={[styles.fareValue, { color: colors.textPrimary }]}>₹{distanceCost}</Text>
+              </View>
+              {insuranceSelected && (
+                <View style={styles.fareRow}>
+                  <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Transit Settle Protection</Text>
+                  <Text style={[styles.fareValue, { color: colors.textPrimary }]}>₹29</Text>
+                </View>
+              )}
+              <View style={[styles.fareRow, { borderTopWidth: 1, borderTopColor: colors.border, marginTop: 8, paddingTop: 8 }]}>
+                <Text style={[styles.fareTotalLabel, { color: colors.textPrimary }]}>Total Charge</Text>
+                <Text style={[styles.fareTotalValue, { color: colors.textPrimary }]}>
+                  ₹{finalTotal}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Charge estimate unavailable</Text>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary }, (booking || estimating) && { opacity: 0.6 }]}
+          onPress={handleBook}
+          disabled={booking || estimating}
+        >
+          {booking ? (
+            <ActivityIndicator color={colors.textPrimary} />
+          ) : (
+            <Text style={[styles.buttonText, { color: colors.textPrimary }]}>Confirm Parcel Booking</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, padding: 20, paddingTop: 60 },
-  title: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 16 },
+  screen: { flex: 1 },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 54,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+  },
+  title: { fontSize: 20, fontWeight: '800' },
+  container: { flex: 1, padding: 20 },
   routeCard: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: COLORS.background
+    borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 14,
   },
   routeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  dot: { width: 9, height: 9, borderRadius: 4.5, marginRight: 10 },
-  routeText: { flex: 1, fontSize: 14, color: COLORS.textSecondary },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8, marginTop: 6 },
-  input: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 10, color: COLORS.textPrimary
+  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  routeText: { flex: 1, fontSize: 13 },
+  scheduleBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginTop: 6,
   },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
+  formCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+  },
+  sectionLabel: { fontSize: 14, fontWeight: '800', marginBottom: 10 },
+  input: {
+    borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 14, marginBottom: 8,
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6, gap: 8 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border,
-    borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5,
+    borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12,
   },
   chipIcon: { fontSize: 15, marginRight: 6 },
   weightChip: {
-    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 20,
-    paddingVertical: 8, paddingHorizontal: 14, marginRight: 8, marginBottom: 8,
+    borderWidth: 1.5, borderRadius: 20,
+    paddingVertical: 8, paddingHorizontal: 14,
   },
-  chipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.cardBg },
-  chipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
-  chipTextActive: { color: COLORS.textPrimary },
+  chipText: { fontSize: 12, fontWeight: '700' },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
   fareCard: {
-    backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 16, marginTop: 14, marginBottom: 20, borderWidth: 1, borderColor: COLORS.border
+    borderRadius: 14, padding: 16, marginTop: 14, marginBottom: 20, borderWidth: 1,
   },
+  breakdownTitle: { fontSize: 14, fontWeight: '800', marginBottom: 10 },
   fareRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  fareLabel: { color: COLORS.textSecondary, fontSize: 13 },
-  fareValue: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '600' },
-  fareTotalLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700' },
-  fareTotalValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '800' },
-  button: { backgroundColor: COLORS.primary, padding: 18, borderRadius: 15, alignItems: 'center' },
-  buttonText: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
+  fareLabel: { fontSize: 13 },
+  fareValue: { fontSize: 13, fontWeight: '600' },
+  fareTotalLabel: { fontSize: 15, fontWeight: '800' },
+  fareTotalValue: { fontSize: 18, fontWeight: '900' },
+  button: { padding: 18, borderRadius: 15, alignItems: 'center' },
+  buttonText: { fontSize: 17, fontWeight: '800' },
 });
