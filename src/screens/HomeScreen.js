@@ -495,6 +495,9 @@ export default function HomeScreen({ navigation }) {
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             contentOffset={{ x: BANNER_WIDTH, y: 0 }}
+            onLayout={() => {
+              bannerScrollRef.current?.scrollTo({ x: BANNER_WIDTH, animated: false });
+            }}
             onScrollBeginDrag={handleScrollBeginDrag}
             onMomentumScrollEnd={handleMomentumScrollEnd}
           >
@@ -509,8 +512,11 @@ export default function HomeScreen({ navigation }) {
                   <Image
                     source={banner.image}
                     style={styles.bannerImage}
-                    resizeMode="cover"
-                    onError={() => handleImageError(banner.id)}
+                    resizeMode="contain"
+                    onError={(err) => {
+                      console.log('Banner image error:', banner.id, err?.nativeEvent);
+                      handleImageError(banner.id);
+                    }}
                   />
                 ) : (
                   <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
@@ -832,11 +838,12 @@ const styles = StyleSheet.create({
     width: BANNER_WIDTH,
     height: BANNER_HEIGHT,
     borderRadius: 14,
-    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bannerImage: {
-    width: BANNER_WIDTH,
-    height: BANNER_HEIGHT,
+    width: '100%',
+    height: '100%',
     borderRadius: 14,
   },
   bannerFallbackCard: {
