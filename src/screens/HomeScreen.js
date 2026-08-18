@@ -523,7 +523,6 @@ export default function HomeScreen({ navigation }) {
                   <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
                     <Text style={[styles.bannerFallbackText, { color: colors.textPrimary }]}>
                       ⚠️ {banner.title}
-                      {banner.title}
                     </Text>
                   </View>
                 )}
@@ -633,7 +632,7 @@ export default function HomeScreen({ navigation }) {
                 navigation.navigate('Rentals');
               }
             }}
-            style={{ marginVertical: 0, padding: 18, borderWith: 1, borderColor: colors.border }}
+            style={{ marginVertical: 0, padding: 18, borderWidth: 1, borderColor: colors.border }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={[styles.pinDot, { backgroundColor: colors.primary }]} />
