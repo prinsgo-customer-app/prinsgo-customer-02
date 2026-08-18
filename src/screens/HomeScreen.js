@@ -67,36 +67,66 @@ const LOOP_BANNERS = [
   { ...LOCAL_BANNERS[0], loopKey: 'clone_tail_0' },
 ];
 
+const SERVICE_IMAGES = {
+  ride: require('../../assets/images/services/ride.png'),
+  parcel: require('../../assets/images/services/parcel.png'),
+  rentals: require('../../assets/images/services/rentals.png'),
+};
+
+const DESTINATION_IMAGES = {
+  bandhavgarh: require('../../assets/images/explore/bandhavgarh.png'),
+  ghughwa: require('../../assets/images/explore/ghughwa.png'),
+  bhedaghat: require('../../assets/images/explore/bhedaghat.png'),
+  kanha: require('../../assets/images/explore/kanha.png'),
+  amarkantak: require('../../assets/images/explore/amarkantak.png'),
+};
+
+const getDestinationImage = (name) => {
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  if (lower.includes('bandhavgarh')) return DESTINATION_IMAGES.bandhavgarh;
+  if (lower.includes('ghughwa')) return DESTINATION_IMAGES.ghughwa;
+  if (lower.includes('bhedaghat')) return DESTINATION_IMAGES.bhedaghat;
+  if (lower.includes('kanha')) return DESTINATION_IMAGES.kanha;
+  if (lower.includes('amarkantak')) return DESTINATION_IMAGES.amarkantak;
+  return null;
+};
+
 const DEFAULT_EXPLORE_LOCATIONS = [
   {
     name: 'Bandhavgarh National Park',
     city: 'Umaria',
     desc: 'Famous royal Bengal tiger sanctuary nestled in Vindhya hills.',
     emoji: '🐅',
+    image: DESTINATION_IMAGES.bandhavgarh,
   },
   {
     name: 'Ghughwa Rashtriya Udyan',
     city: 'Dindori',
     desc: 'Incredible national plant fossil park dating back 6.5 million years.',
     emoji: '🦖',
+    image: DESTINATION_IMAGES.ghughwa,
   },
   {
     name: 'Bhedaghat Marble Rocks',
     city: 'Jabalpur',
     desc: 'Breathtaking gorges of marble sculpted by Narmada River.',
     emoji: '⛰️',
+    image: DESTINATION_IMAGES.bhedaghat,
   },
   {
     name: 'Kanha National Park',
     city: 'Mandla',
     desc: 'Vast scenic preserve harboring rare swamp deer and barasingha.',
     emoji: '🦌',
+    image: DESTINATION_IMAGES.kanha,
   },
   {
     name: 'Amarkantak Source of Narmada',
     city: 'Anuppur',
     desc: 'The unique holy meeting point of Satpura & Vindhya mountain ranges.',
     emoji: '🕉️',
+    image: DESTINATION_IMAGES.amarkantak,
   },
 ];
 
@@ -554,13 +584,16 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.serviceSelectorRow}>
             {rideEnabled && (
               <TouchableOpacity
+                activeOpacity={0.85}
                 style={[
                   styles.serviceSelectorCard,
                   { backgroundColor: colors.cardBg, borderColor: mode === 'ride' ? colors.primary : colors.border },
                 ]}
                 onPress={() => setMode('ride')}
               >
-                <Text style={styles.serviceSelectorIcon}>🚕</Text>
+                <View style={styles.serviceImageContainer}>
+                  <Image source={SERVICE_IMAGES.ride} style={styles.serviceCardImage} resizeMode="cover" />
+                </View>
                 <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Ride</Text>
                 <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Book a fast trip</Text>
               </TouchableOpacity>
@@ -568,13 +601,16 @@ export default function HomeScreen({ navigation }) {
 
             {parcelEnabled && (
               <TouchableOpacity
+                activeOpacity={0.85}
                 style={[
                   styles.serviceSelectorCard,
                   { backgroundColor: colors.cardBg, borderColor: mode === 'parcel' ? colors.primary : colors.border },
                 ]}
                 onPress={() => setMode('parcel')}
               >
-                <Text style={styles.serviceSelectorIcon}>📦</Text>
+                <View style={styles.serviceImageContainer}>
+                  <Image source={SERVICE_IMAGES.parcel} style={styles.serviceCardImage} resizeMode="cover" />
+                </View>
                 <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Parcel</Text>
                 <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Send items securely</Text>
               </TouchableOpacity>
@@ -582,13 +618,16 @@ export default function HomeScreen({ navigation }) {
 
             {rentalsEnabled && (
               <TouchableOpacity
+                activeOpacity={0.85}
                 style={[
                   styles.serviceSelectorCard,
                   { backgroundColor: colors.cardBg, borderColor: mode === 'rentals' ? colors.primary : colors.border },
                 ]}
                 onPress={() => setMode('rentals')}
               >
-                <Text style={styles.serviceSelectorIcon}>🚗</Text>
+                <View style={styles.serviceImageContainer}>
+                  <Image source={SERVICE_IMAGES.rentals} style={styles.serviceCardImage} resizeMode="cover" />
+                </View>
                 <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Rentals</Text>
                 <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Hourly / Daily car</Text>
               </TouchableOpacity>
@@ -728,28 +767,54 @@ export default function HomeScreen({ navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 14 }}
           >
-            {exploreSights.map((place, idx) => (
-              <View
-                key={idx}
-                style={[
-                  styles.exploreCard,
-                  { backgroundColor: colors.cardBg, borderColor: colors.border },
-                ]}
-              >
-                <View style={[styles.exploreIconWrap, { backgroundColor: colors.background }]}>
-                  <Text style={{ fontSize: 24 }}>{place.emoji || '📍'}</Text>
-                </View>
-                <Text style={[styles.exploreName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {place.name}
-                </Text>
-                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
-                  📍 {place.city || 'Madhya Pradesh'}
-                </Text>
-                <Text style={[styles.exploreDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-                  {place.desc || place.description}
-                </Text>
-              </View>
-            ))}
+            {exploreSights.map((place, idx) => {
+              const placeImage =
+                place.image ||
+                getDestinationImage(place.name) ||
+                (typeof place.imageUrl === 'string' && place.imageUrl.startsWith('http')
+                  ? { uri: place.imageUrl }
+                  : null);
+
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  activeOpacity={0.85}
+                  style={[
+                    styles.exploreCard,
+                    { backgroundColor: colors.cardBg, borderColor: colors.border },
+                  ]}
+                  onPress={() => {
+                    if (!requireLocation()) return;
+                    if (mode === 'ride' && rideEnabled) {
+                      navigation.navigate('PlaceSearch', { mode: 'ride', currentLocation, field: 'drop', initialQuery: place.name });
+                    } else if (mode === 'parcel' && parcelEnabled) {
+                      navigation.navigate('PlaceSearch', { mode: 'parcel', currentLocation, field: 'drop', initialQuery: place.name });
+                    } else if (rentalsEnabled) {
+                      navigation.navigate('Rentals');
+                    }
+                  }}
+                >
+                  {placeImage ? (
+                    <View style={styles.exploreImageContainer}>
+                      <Image source={placeImage} style={styles.exploreCardImage} resizeMode="cover" />
+                    </View>
+                  ) : (
+                    <View style={[styles.exploreIconWrap, { backgroundColor: colors.background }]}>
+                      <Text style={{ fontSize: 24 }}>{place.emoji || '📍'}</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.exploreName, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {place.name}
+                  </Text>
+                  <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', marginTop: 2 }}>
+                    📍 {place.city || 'Madhya Pradesh'}
+                  </Text>
+                  <Text style={[styles.exploreDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+                    {place.desc || place.description}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -890,14 +955,23 @@ const styles = StyleSheet.create({
   },
   serviceSelectorCard: {
     flex: 1,
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 14,
     borderWidth: 2,
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  serviceSelectorIcon: {
-    fontSize: 26,
-    marginBottom: 4,
+  serviceImageContainer: {
+    width: '100%',
+    height: 72,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#0F172A',
+    marginBottom: 8,
+  },
+  serviceCardImage: {
+    width: '100%',
+    height: '100%',
   },
   serviceSelectorTitle: {
     fontSize: 14,
@@ -969,10 +1043,23 @@ const styles = StyleSheet.create({
 
   // Explore Your City styles
   exploreCard: {
-    width: 200,
+    width: 210,
     borderWidth: 1,
     borderRadius: 14,
-    padding: 12,
+    padding: 10,
+    overflow: 'hidden',
+  },
+  exploreImageContainer: {
+    width: '100%',
+    height: 115,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#0F172A',
+    marginBottom: 8,
+  },
+  exploreCardImage: {
+    width: '100%',
+    height: '100%',
   },
   exploreIconWrap: {
     width: 44,
