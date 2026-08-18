@@ -23,7 +23,49 @@ import AnimatedCard from '../components/AnimatedCard';
 
 const { width } = Dimensions.get('window');
 
+const BANNER_MARGIN = 20;
+const BANNER_WIDTH = width - BANNER_MARGIN * 2;
+// Banner PNG original dimensions are ~1496x240 (aspect ratio ~6.23)
+const BANNER_HEIGHT = Math.round(BANNER_WIDTH / 6.23);
+
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
+
+const LOCAL_BANNERS = [
+  {
+    id: 'banner_ride',
+    image: require('../../assets/images/banner/PrinsGo_Banner_01_Ride_20_OFF.png'),
+    type: 'ride',
+    title: 'Ride – Flat 20% OFF',
+  },
+  {
+    id: 'banner_parcel',
+    image: require('../../assets/images/banner/PrinsGo_Banner_02_Parcel_Delivery.png'),
+    type: 'parcel',
+    title: 'Parcel Delivery',
+  },
+  {
+    id: 'banner_rental',
+    image: require('../../assets/images/banner/PrinsGo_Banner_03_Rent_A_Car.png'),
+    type: 'rentals',
+    title: 'Rent a Car',
+  },
+  {
+    id: 'banner_explore',
+    image: require('../../assets/images/banner/PrinsGo_Banner_04_Explore_Your_City.png'),
+    type: 'explore',
+    title: 'Explore Your City',
+  },
+];
+
+// Cloned array for seamless infinite looping: [B3, B0, B1, B2, B3, B0]
+const LOOP_BANNERS = [
+  { ...LOCAL_BANNERS[3], loopKey: 'clone_head_3' },
+  { ...LOCAL_BANNERS[0], loopKey: 'real_0' },
+  { ...LOCAL_BANNERS[1], loopKey: 'real_1' },
+  { ...LOCAL_BANNERS[2], loopKey: 'real_2' },
+  { ...LOCAL_BANNERS[3], loopKey: 'real_3' },
+  { ...LOCAL_BANNERS[0], loopKey: 'clone_tail_0' },
+];
 
 const DEFAULT_EXPLORE_LOCATIONS = [
   {
@@ -71,11 +113,21 @@ export default function HomeScreen({ navigation }) {
   const [checkingActive, setCheckingActive] = useState(true);
   const [recentBookings, setRecentBookings] = useState([]);
 
-  // Admin dynamic integrations
-  const [banners, setBanners] = useState([]);
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-  const bannerScrollRef = useRef(null);
+  // Main scroll view and explore section references for banner tap navigation
+  const mainScrollViewRef = useRef(null);
+  const [exploreSectionY, setExploreSectionY] = useState(0);
 
+  // Carousel slider state & refs
+  const bannerScrollRef = useRef(null);
+  const [activeDotIndex, setActiveDotIndex] = useState(0);
+  const currentIndexRef = useRef(1); // Real B0 index in LOOP_BANNERS
+  const autoSlideTimerRef = useRef(null);
+  const resetTimeoutRef = useRef(null);
+
+  // Asset image failure state tracking
+  const [imageErrors, setImageErrors] = useState({});
+
+  // Feature toggles and admin settings
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
   const [rentalsEnabled, setRentalsEnabled] = useState(true);
@@ -113,19 +165,124 @@ export default function HomeScreen({ navigation }) {
     loadAdminConfig();
   }, []);
 
-  // Auto scroll banners
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
-      let nextIndex = activeBannerIndex + 1;
-      if (nextIndex >= banners.length) {
-        nextIndex = 0;
+  // Auto slide carousel management
+  const stopAutoSlide = () => {
+    if (autoSlideTimerRef.current) {
+      clearInterval(autoSlideTimerRef.current);
+      autoSlideTimerRef.current = null;
+    }
+  };
+
+  const startAutoSlide = () => {
+    stopAutoSlide();
+    autoSlideTimerRef.current = setInterval(() => {
+      if (!bannerScrollRef.current) return;
+      const nextIndex = currentIndexRef.current + 1;
+      bannerScrollRef.current.scrollTo({
+        x: nextIndex * BANNER_WIDTH,
+        animated: true,
+      });
+      currentIndexRef.current = nextIndex;
+      setActiveDotIndex((nextIndex - 1 + 4) % 4);
+
+      if (nextIndex === 5) {
+        // Smoothly wrapped to clone tail (clone of B0); reset position silently after animation
+        if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = setTimeout(() => {
+          bannerScrollRef.current?.scrollTo({
+            x: 1 * BANNER_WIDTH,
+            animated: false,
+          });
+          currentIndexRef.current = 1;
+          setActiveDotIndex(0);
+        }, 350);
       }
-      setActiveBannerIndex(nextIndex);
-      bannerScrollRef.current?.scrollTo({ x: nextIndex * (width - 40), animated: true });
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [activeBannerIndex, banners]);
+    }, 4500);
+  };
+
+  useEffect(() => {
+    startAutoSlide();
+    return () => {
+      stopAutoSlide();
+      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    };
+  }, []);
+
+  const handleScrollBeginDrag = () => {
+    stopAutoSlide();
+  };
+
+  const handleMomentumScrollEnd = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    let index = Math.round(offsetX / BANNER_WIDTH);
+
+    if (index <= 0) {
+      // Swiped left to clone head (clone of B3) -> jump instantly to real B3 at index 4
+      bannerScrollRef.current?.scrollTo({
+        x: 4 * BANNER_WIDTH,
+        animated: false,
+      });
+      index = 4;
+    } else if (index >= 5) {
+      // Swiped right to clone tail (clone of B0) -> jump instantly to real B0 at index 1
+      bannerScrollRef.current?.scrollTo({
+        x: 1 * BANNER_WIDTH,
+        animated: false,
+      });
+      index = 1;
+    }
+
+    currentIndexRef.current = index;
+    setActiveDotIndex((index - 1 + 4) % 4);
+    startAutoSlide();
+  };
+
+  const handleBannerPress = (banner) => {
+    if (!banner) return;
+
+    switch (banner.type) {
+      case 'ride':
+        if (!rideEnabled) {
+          Alert.alert('Unavailable', 'Ride booking is temporarily disabled by admin.');
+          return;
+        }
+        if (!requireLocation()) return;
+        navigation.navigate('PlaceSearch', { mode: 'ride', currentLocation, field: 'drop' });
+        break;
+
+      case 'parcel':
+        if (!parcelEnabled) {
+          Alert.alert('Unavailable', 'Parcel delivery is temporarily disabled by admin.');
+          return;
+        }
+        if (!requireLocation()) return;
+        navigation.navigate('PlaceSearch', { mode: 'parcel', currentLocation, field: 'drop' });
+        break;
+
+      case 'rentals':
+        if (!rentalsEnabled) {
+          Alert.alert('Unavailable', 'Rentals service is temporarily disabled by admin.');
+          return;
+        }
+        navigation.navigate('Rentals');
+        break;
+
+      case 'explore':
+        if (exploreSectionY > 0 && mainScrollViewRef.current) {
+          mainScrollViewRef.current.scrollTo({ y: exploreSectionY, animated: true });
+        } else if (mainScrollViewRef.current) {
+          mainScrollViewRef.current.scrollTo({ y: 700, animated: true });
+        }
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  const handleImageError = (id) => {
+    setImageErrors((prev) => ({ ...prev, [id]: true }));
+  };
 
   const checkActiveTrips = async () => {
     try {
@@ -157,14 +314,10 @@ export default function HomeScreen({ navigation }) {
 
   const loadAdminConfig = async () => {
     try {
-      const [bannersRes, togglesRes, settingsRes] = await Promise.all([
-        getBanners().catch(() => ({ data: { banners: [] } })),
+      const [togglesRes, settingsRes] = await Promise.all([
         getToggles().catch(() => ({ data: { toggles: [] } })),
         getSettings().catch(() => ({ data: { settings: {} } })),
       ]);
-
-      const fetchedBanners = bannersRes.data?.banners || [];
-      setBanners(fetchedBanners);
 
       const toggles = togglesRes.data?.toggles || [];
       const rideToggle = toggles.find((t) => t.key === 'ride_booking' || t.key === 'ride');
@@ -275,12 +428,6 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const handleScroll = (event) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollPosition / (width - 40));
-    setActiveBannerIndex(index);
-  };
-
   if (isMaintenance) {
     return (
       <View style={[styles.maintenanceCenter, { backgroundColor: colors.background }]}>
@@ -301,26 +448,13 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  const activeBanners = banners.length > 0 ? banners : [
-    {
-      _id: 'fallback_1',
-      title: 'Flat 20% OFF on your first ride booking!',
-      linkValue: 'PRINSGO20',
-      tag: 'WELCOME OFFER',
-      emoji: '⚡'
-    },
-    {
-      _id: 'fallback_2',
-      title: 'Ship files, items & packages instantly',
-      linkValue: 'PRINSPARCEL',
-      tag: 'PARCEL DELIVERY',
-      emoji: '📦'
-    }
-  ];
-
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView
+        ref={mainScrollViewRef}
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 110 }}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -351,46 +485,55 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic Banners Slider */}
+        {/* Premium PNG Banners Carousel */}
         <View style={styles.carouselContainer}>
           <ScrollView
             ref={bannerScrollRef}
             horizontal
             pagingEnabled
+            snapToInterval={BANNER_WIDTH}
+            decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={handleScroll}
-            contentContainerStyle={{ width: (width - 40) * activeBanners.length }}
+            contentOffset={{ x: BANNER_WIDTH, y: 0 }}
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
           >
-            {activeBanners.map((banner) => (
-              <View key={banner._id} style={[styles.banner, { width: width - 40, backgroundColor: colors.textPrimary }]}>
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={[styles.bannerTag, { color: colors.primary }]}>
-                    {banner.tag || 'SPECIAL OFFER'}
-                  </Text>
-                  <Text style={[styles.bannerTitle, { color: colors.background }]} numberOfLines={2}>
-                    {banner.title}
-                  </Text>
-                  {banner.linkValue ? (
-                    <View style={styles.couponPill}>
-                      <Text style={[styles.couponText, { color: colors.background }]}>{banner.linkValue}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                {banner.imageUrl ? (
-                  <Image source={{ uri: banner.imageUrl }} style={styles.bannerImage} />
+            {LOOP_BANNERS.map((banner) => (
+              <TouchableOpacity
+                key={banner.loopKey}
+                activeOpacity={0.9}
+                style={styles.bannerCard}
+                onPress={() => handleBannerPress(banner)}
+              >
+                {!imageErrors[banner.id] ? (
+                  <Image
+                    source={banner.image}
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                    onError={() => handleImageError(banner.id)}
+                  />
                 ) : (
-                  <Text style={styles.bannerEmoji}>{banner.emoji || '🎁'}</Text>
+                  <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
+                    <Text style={[styles.bannerFallbackText, { color: colors.textPrimary }]}>
+                      {banner.title}
+                    </Text>
+                  </View>
                 )}
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
+
+          {/* Carousel Indicator Dots */}
           <View style={styles.dotIndicatorRow}>
-            {activeBanners.map((_, i) => (
+            {LOCAL_BANNERS.map((_, i) => (
               <View
                 key={i}
                 style={[
                   styles.dot,
-                  { backgroundColor: i === activeBannerIndex ? colors.primary : colors.textLight },
+                  {
+                    width: i === activeDotIndex ? 18 : 6,
+                    backgroundColor: i === activeDotIndex ? colors.primary : (colors.border || '#D1D5DB'),
+                  },
                 ]}
               />
             ))}
@@ -562,7 +705,10 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Explore Your City Section */}
-        <View style={[styles.section, { marginTop: 24, marginBottom: 14 }]}>
+        <View
+          onLayout={(e) => setExploreSectionY(e.nativeEvent.layout.y)}
+          style={[styles.section, { marginTop: 24, marginBottom: 14 }]}
+        >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontSize: 16 * fontSizeMultiplier, marginBottom: 4 }]}>
             Explore Your City 🗺️
           </Text>
@@ -680,33 +826,40 @@ const styles = StyleSheet.create({
   carouselContainer: {
     marginHorizontal: 20,
     marginTop: 16,
-    height: 165,
+    marginBottom: 8,
   },
-  banner: {
-    flexDirection: 'row',
-    borderRadius: 18,
-    padding: 18,
-    alignItems: 'center',
+  bannerCard: {
+    width: BANNER_WIDTH,
+    height: BANNER_HEIGHT,
+    borderRadius: 14,
     overflow: 'hidden',
-    height: 140,
   },
-  bannerTag: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  bannerTitle: { fontSize: 16, fontWeight: '800', marginTop: 4, lineHeight: 21 },
-  couponPill: {
-    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20,
-    paddingVertical: 4, paddingHorizontal: 10, marginTop: 8, alignSelf: 'flex-start',
+  bannerImage: {
+    width: BANNER_WIDTH,
+    height: BANNER_HEIGHT,
+    borderRadius: 14,
   },
-  couponText: { fontWeight: '700', fontSize: 11, letterSpacing: 0.5 },
-  bannerEmoji: { fontSize: 44, marginLeft: 8 },
-  bannerImage: { width: 60, height: 60, borderRadius: 10, marginLeft: 8 },
+  bannerFallbackCard: {
+    width: BANNER_WIDTH,
+    height: BANNER_HEIGHT,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerFallbackText: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   dotIndicatorRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 8,
+    alignItems: 'center',
+    marginTop: 10,
     gap: 6,
   },
   dot: {
-    width: 6,
     height: 6,
     borderRadius: 3,
   },
