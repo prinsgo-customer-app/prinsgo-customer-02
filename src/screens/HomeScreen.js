@@ -25,8 +25,8 @@ const { width } = Dimensions.get('window');
 
 const BANNER_MARGIN = 20;
 const BANNER_WIDTH = width - BANNER_MARGIN * 2;
-// Banner PNG original dimensions are ~1496x240 (aspect ratio ~6.23)
-const BANNER_HEIGHT = Math.round(BANNER_WIDTH / 6.23);
+// Height adjusted for mobile card visibility (~110-120px height)
+const BANNER_HEIGHT = Math.round(BANNER_WIDTH * 0.35);
 
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
 
@@ -512,7 +512,7 @@ export default function HomeScreen({ navigation }) {
                   <Image
                     source={banner.image}
                     style={styles.bannerImage}
-                    resizeMode="contain"
+                    resizeMode="cover"
                     onError={(err) => {
                       console.log('Banner image error:', banner.id, err?.nativeEvent);
                       handleImageError(banner.id);
@@ -521,7 +521,7 @@ export default function HomeScreen({ navigation }) {
                 ) : (
                   <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
                     <Text style={[styles.bannerFallbackText, { color: colors.textPrimary }]}>
-                      {banner.title}
+                      ⚠️ {banner.title}
                     </Text>
                   </View>
                 )}
@@ -838,12 +838,14 @@ const styles = StyleSheet.create({
     width: BANNER_WIDTH,
     height: BANNER_HEIGHT,
     borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#1A2238',
     justifyContent: 'center',
     alignItems: 'center',
   },
   bannerImage: {
-    width: '100%',
-    height: '100%',
+    width: BANNER_WIDTH,
+    height: BANNER_HEIGHT,
     borderRadius: 14,
   },
   bannerFallbackCard: {
