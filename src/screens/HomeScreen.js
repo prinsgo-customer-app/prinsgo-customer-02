@@ -25,13 +25,8 @@ const { width } = Dimensions.get('window');
 
 const BANNER_MARGIN = 20;
 const BANNER_WIDTH = width - BANNER_MARGIN * 2;
-<<<<<<< HEAD
 // Height adjusted for mobile card visibility (~110-120px height)
-const BANNER_HEIGHT = Math.round(BANNER_WIDTH * 0.35);
-=======
-// Banner PNG original dimensions are ~1496x240 (aspect ratio ~6.23)
 const BANNER_HEIGHT = Math.round(BANNER_WIDTH / 6.23);
->>>>>>> origin/main
 
 const VEHICLE_ICONS = { bike: '🏍️', auto: '🛺', car_mini: '🚗', car_sedan: '🚘' };
 
@@ -500,12 +495,9 @@ export default function HomeScreen({ navigation }) {
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             contentOffset={{ x: BANNER_WIDTH, y: 0 }}
-<<<<<<< HEAD
             onLayout={() => {
               bannerScrollRef.current?.scrollTo({ x: BANNER_WIDTH, animated: false });
             }}
-=======
->>>>>>> origin/main
             onScrollBeginDrag={handleScrollBeginDrag}
             onMomentumScrollEnd={handleMomentumScrollEnd}
           >
@@ -521,23 +513,17 @@ export default function HomeScreen({ navigation }) {
                     source={banner.image}
                     style={styles.bannerImage}
                     resizeMode="cover"
-<<<<<<< HEAD
                     onError={(err) => {
                       console.log('Banner image error:', banner.id, err?.nativeEvent);
                       handleImageError(banner.id);
                     }}
-=======
                     onError={() => handleImageError(banner.id)}
->>>>>>> origin/main
                   />
                 ) : (
                   <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
                     <Text style={[styles.bannerFallbackText, { color: colors.textPrimary }]}>
-<<<<<<< HEAD
                       ⚠️ {banner.title}
-=======
                       {banner.title}
->>>>>>> origin/main
                     </Text>
                   </View>
                 )}
@@ -855,12 +841,9 @@ const styles = StyleSheet.create({
     height: BANNER_HEIGHT,
     borderRadius: 14,
     overflow: 'hidden',
-<<<<<<< HEAD
     backgroundColor: '#1A2238',
     justifyContent: 'center',
     alignItems: 'center',
-=======
->>>>>>> origin/main
   },
   bannerImage: {
     width: BANNER_WIDTH,
