@@ -84,11 +84,27 @@ const DESTINATION_IMAGES = {
 const getDestinationImage = (name) => {
   if (!name) return null;
   const lower = name.toLowerCase().trim();
-  if (lower.includes('bandhavgarh')) return DESTINATION_IMAGES.bandhavgarh;
-  if (lower.includes('ghughwa')) return DESTINATION_IMAGES.ghughwa;
-  if (lower.includes('bhedaghat')) return DESTINATION_IMAGES.bhedaghat;
-  if (lower.includes('kanha')) return DESTINATION_IMAGES.kanha;
-  if (lower.includes('amarkantak')) return DESTINATION_IMAGES.amarkantak;
+
+  if (lower === 'bandhavgarh national park') return DESTINATION_IMAGES.bandhavgarh;
+  if (lower === 'ghughwa rashtriya udyan') return DESTINATION_IMAGES.ghughwa;
+  if (lower === 'bhedaghat marble rocks') return DESTINATION_IMAGES.bhedaghat;
+  if (lower === 'kanha national park') return DESTINATION_IMAGES.kanha;
+  if (lower === 'amarkantak source of narmada') return DESTINATION_IMAGES.amarkantak;
+
+  // Strict matching to fallback if only partial names or different formatting are used,
+  // but explicitly ensuring Bandhavgarh won't accidentally return Ghughwa and vice versa.
+  const isBandhavgarh = lower === 'bandhavgarh' || lower.startsWith('bandhavgarh');
+  const isGhughwa = lower === 'ghughwa' || lower.startsWith('ghughwa');
+  const isBhedaghat = lower === 'bhedaghat' || lower.startsWith('bhedaghat');
+  const isKanha = lower === 'kanha' || lower.startsWith('kanha');
+  const isAmarkantak = lower === 'amarkantak' || lower.startsWith('amarkantak');
+
+  if (isBandhavgarh && !isGhughwa && !isBhedaghat && !isKanha && !isAmarkantak) return DESTINATION_IMAGES.bandhavgarh;
+  if (isGhughwa && !isBandhavgarh && !isBhedaghat && !isKanha && !isAmarkantak) return DESTINATION_IMAGES.ghughwa;
+  if (isBhedaghat && !isBandhavgarh && !isGhughwa && !isKanha && !isAmarkantak) return DESTINATION_IMAGES.bhedaghat;
+  if (isKanha && !isBandhavgarh && !isGhughwa && !isBhedaghat && !isAmarkantak) return DESTINATION_IMAGES.kanha;
+  if (isAmarkantak && !isBandhavgarh && !isGhughwa && !isBhedaghat && !isKanha) return DESTINATION_IMAGES.amarkantak;
+
   return null;
 };
 
@@ -547,7 +563,6 @@ export default function HomeScreen({ navigation }) {
                       console.log('Banner image error:', banner.id, err?.nativeEvent);
                       handleImageError(banner.id);
                     }}
-                    onError={() => handleImageError(banner.id)}
                   />
                 ) : (
                   <View style={[styles.bannerFallbackCard, { backgroundColor: colors.cardBg }]}>
@@ -768,12 +783,16 @@ export default function HomeScreen({ navigation }) {
             contentContainerStyle={{ gap: 14 }}
           >
             {exploreSights.map((place, idx) => {
-              const placeImage =
-                place.image ||
-                getDestinationImage(place.name) ||
-                (typeof place.imageUrl === 'string' && place.imageUrl.startsWith('http')
-                  ? { uri: place.imageUrl }
-                  : null);
+              // Ensure Parcel service explicitly uses Parcel image without falling back to any destination image logic
+              const isParcel = place.name && place.name.toLowerCase().includes('parcel');
+
+              const placeImage = isParcel
+                ? SERVICE_IMAGES.parcel
+                : place.image ||
+                  getDestinationImage(place.name) ||
+                  (typeof place.imageUrl === 'string' && place.imageUrl.startsWith('http')
+                    ? { uri: place.imageUrl }
+                    : null);
 
               return (
                 <TouchableOpacity
