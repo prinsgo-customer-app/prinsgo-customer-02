@@ -85,7 +85,7 @@ const getDestinationImage = (name) => {
   if (!name) return null;
   const lower = name.toLowerCase().trim();
   if (lower.includes('bandhavgarh')) return DESTINATION_IMAGES.bandhavgarh;
-  if (lower.includes('ghughwa')) return DESTINATION_IMAGES.ghughwa;
+  if (lower.includes('ghughwa') || lower.includes('fossil')) return DESTINATION_IMAGES.ghughwa;
   if (lower.includes('bhedaghat')) return DESTINATION_IMAGES.bhedaghat;
   if (lower.includes('kanha')) return DESTINATION_IMAGES.kanha;
   if (lower.includes('amarkantak')) return DESTINATION_IMAGES.amarkantak;
@@ -101,14 +101,14 @@ const DEFAULT_EXPLORE_LOCATIONS = [
     image: DESTINATION_IMAGES.bandhavgarh,
   },
   {
-    name: 'Ghughwa Rashtriya Udyan',
+    name: 'Ghughwa Rashtriya Udyan / National Fossil Park',
     city: 'Dindori',
     desc: 'Incredible national plant fossil park dating back 6.5 million years.',
     emoji: '🦖',
     image: DESTINATION_IMAGES.ghughwa,
   },
   {
-    name: 'Bhedaghat Marble Rocks',
+    name: 'Bhedaghat',
     city: 'Jabalpur',
     desc: 'Breathtaking gorges of marble sculpted by Narmada River.',
     emoji: '⛰️',
@@ -122,7 +122,7 @@ const DEFAULT_EXPLORE_LOCATIONS = [
     image: DESTINATION_IMAGES.kanha,
   },
   {
-    name: 'Amarkantak Source of Narmada',
+    name: 'Amarkantak',
     city: 'Anuppur',
     desc: 'The unique holy meeting point of Satpura & Vindhya mountain ranges.',
     emoji: '🕉️',
@@ -769,8 +769,8 @@ export default function HomeScreen({ navigation }) {
           >
             {exploreSights.map((place, idx) => {
               const placeImage =
-                place.image ||
                 getDestinationImage(place.name) ||
+                place.image ||
                 (typeof place.imageUrl === 'string' && place.imageUrl.startsWith('http')
                   ? { uri: place.imageUrl }
                   : null);
