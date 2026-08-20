@@ -180,6 +180,34 @@ export default function HomeScreen({ navigation }) {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [exploreSights, setExploreSights] = useState(DEFAULT_EXPLORE_LOCATIONS);
 
+  useEffect(() => {
+    let isMounted = true;
+    fetch('https://prinsgo-backend.onrender.com/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        const list = data?.settings?.explore_cities_list;
+        if (Array.isArray(list) && list.length > 0) {
+          const activeList = list
+            .filter((c) => c.active !== false)
+            .map((c) => ({
+              name: c.name,
+              city: c.city,
+              desc: c.desc,
+              emoji: c.emoji,
+              imageUrl: c.image,
+            }));
+          if (activeList.length > 0) {
+            setExploreSights(activeList);
+          }
+        }
+      })
+      .catch((err) => {
+        console.log('Explore cities fetch failed, using defaults:', err.message);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
   // Home remote contents
   const [homeTitle, setHomeTitle] = useState('PrinsGo Premium');
   const [homeSubtitle, setHomeSubtitle] = useState('Your ride, parcel & rentals partner');
