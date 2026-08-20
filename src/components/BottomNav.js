@@ -26,7 +26,7 @@ export default function BottomNav({ active }) {
   };
 
   return (
-    <View style={[styles.bottomNav, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+    <View style={[styles.bottomNav, { backgroundColor: colors.background, borderTopColor: colors.border, shadowColor: colors.shadow }]}>
       {TABS.map((tab) =>
         tab.isCenter ? (
           <TouchableOpacity key={tab.key} style={styles.bottomNavItem} onPress={() => handlePress(tab.key)}>
@@ -36,7 +36,7 @@ export default function BottomNav({ active }) {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity key={tab.key} style={styles.bottomNavItem} onPress={() => handlePress(tab.key)}>
-            <Text style={[styles.bottomNavIcon, active === tab.key && styles.bottomNavIconActive, { opacity: active === tab.key ? 1 : 0.5 }]}>
+            <Text style={[styles.bottomNavIcon, active === tab.key && styles.bottomNavIconActive, { opacity: active === tab.key ? 1 : 0.4 }]}>
               {tab.icon}
             </Text>
             <Text style={[styles.bottomNavLabel, active === tab.key ? { color: colors.textPrimary, fontWeight: '700' } : { color: colors.textLight }]}>
@@ -54,17 +54,20 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row',
     borderTopWidth: 1,
-    paddingTop: 10, paddingBottom: 22, paddingHorizontal: 8,
+    paddingTop: 12, paddingBottom: 24, paddingHorizontal: 12,
     justifyContent: 'space-around', alignItems: 'center',
+    shadowOpacity: 1, shadowRadius: 10, shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   bottomNavItem: { alignItems: 'center', flex: 1 },
-  bottomNavIcon: { fontSize: 20 },
-  bottomNavIconActive: { fontSize: 20 },
-  bottomNavLabel: { fontSize: 11, marginTop: 3, fontWeight: '600' },
+  bottomNavIcon: { fontSize: 22 },
+  bottomNavIconActive: { fontSize: 24 },
+  bottomNavLabel: { fontSize: 11, marginTop: 4, fontWeight: '500' },
   bottomNavCenterButton: {
-    width: 48, height: 48, borderRadius: 24,
-    justifyContent: 'center', alignItems: 'center', marginTop: -26,
-    shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+    width: 56, height: 56, borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center', marginTop: -32,
+    shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
-  bottomNavCenterIcon: { fontSize: 20 },
+  bottomNavCenterIcon: { fontSize: 24 },
 });

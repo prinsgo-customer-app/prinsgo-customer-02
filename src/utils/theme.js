@@ -1,39 +1,39 @@
 export const COLORS = {
   light: {
     primary: '#FFC72C',      // Premium Yellow Accent
-    background: '#FFFFFF',   // White Background
-    cardBg: '#F5F6F8',       // Light grey card backgrounds
-    textPrimary: '#0A0F24',  // Dark Navy Typography
-    textSecondary: '#666666',// Grey description text
-    textLight: '#999999',    // Light grey metadata
-    border: '#E5E7EB',       // Fine grey borders
+    background: '#FFFFFF',   // Bright White Background
+    cardBg: '#F9FAFB',       // Very light, clean grey for cards
+    textPrimary: '#111827',  // Soft dark grey for readable typography
+    textSecondary: '#4B5563',// Medium grey description text
+    textLight: '#9CA3AF',    // Light grey metadata
+    border: '#F3F4F6',       // Very subtle borders
     statusBar: 'dark',
 
     // Semantic functional colors
-    blue: '#1877F2',
-    green: '#16A34A',
-    orange: '#EA580C',
-    grey: '#999999',
-    red: '#DC2626',
-    shadow: 'rgba(10, 15, 36, 0.08)',
+    blue: '#2563EB',
+    green: '#10B981',
+    orange: '#F59E0B',
+    grey: '#9CA3AF',
+    red: '#EF4444',
+    shadow: 'rgba(0, 0, 0, 0.05)', // Softer shadow
   },
   dark: {
-    primary: '#FFC72C',      // Premium Yellow Accent (keeps brand identity)
-    background: '#0B0F19',   // Deep dark navy backdrop
-    cardBg: '#161B26',       // Premium Dark Cards
-    textPrimary: '#FFFFFF',  // White Typography
-    textSecondary: '#94A3B8',// Slate description text
-    textLight: '#64748B',    // Muted slate metadata
-    border: '#1E293B',       // Dark borders
+    primary: '#FFC72C',      // Premium Yellow Accent
+    background: '#111827',   // Softer dark background (not pitch black)
+    cardBg: '#1F2937',       // Lighter dark card background
+    textPrimary: '#F9FAFB',  // Off-white Typography
+    textSecondary: '#9CA3AF',// Slate description text
+    textLight: '#6B7280',    // Muted slate metadata
+    border: '#374151',       // Soft dark borders
     statusBar: 'light',
 
     // Semantic functional colors
     blue: '#3B82F6',
-    green: '#22C55E',
-    orange: '#F97316',
-    grey: '#64748B',
+    green: '#10B981',
+    orange: '#F59E0B',
+    grey: '#6B7280',
     red: '#EF4444',
-    shadow: 'rgba(0, 0, 0, 0.3)',
+    shadow: 'rgba(0, 0, 0, 0.25)', // Softer shadow for dark mode
   }
 };
 
