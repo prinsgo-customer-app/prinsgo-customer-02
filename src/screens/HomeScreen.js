@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   Dimensions,
+  Linking,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
@@ -166,6 +167,7 @@ export default function HomeScreen({ navigation }) {
   // Carousel slider state & refs
   const bannerScrollRef = useRef(null);
   const [activeDotIndex, setActiveDotIndex] = useState(0);
+  const [adminBanners, setAdminBanners] = useState([]);
   const currentIndexRef = useRef(1); // Real B0 index in LOOP_BANNERS
   const autoSlideTimerRef = useRef(null);
   const resetTimeoutRef = useRef(null);
@@ -239,6 +241,45 @@ export default function HomeScreen({ navigation }) {
     loadAdminConfig();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    fetch('https://prinsgo-backend.onrender.com/api/banners')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        const list = data?.banners;
+        if (Array.isArray(list) && list.length > 0) {
+          const mapped = list
+            .filter((b) => b.isActive !== false)
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((b, idx) => ({
+              id: `admin_banner_${b._id || idx}`,
+              image: b.imageUrl ? { uri: b.imageUrl } : null,
+              type: 'admin',
+              title: b.title,
+              linkType: b.linkType,
+              linkValue: b.linkValue,
+            }));
+          setAdminBanners(mapped);
+        }
+      })
+      .catch((err) => {
+        console.log('Admin banners fetch failed, using local only:', err.message);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  const combinedBanners = useMemo(() => [...LOCAL_BANNERS, ...adminBanners], [adminBanners]);
+  const bannerCount = combinedBanners.length;
+  const loopBanners = useMemo(() => {
+    if (bannerCount === 0) return [];
+    return [
+      { ...combinedBanners[bannerCount - 1], loopKey: 'clone_head' },
+      ...combinedBanners.map((b, i) => ({ ...b, loopKey: `real_${i}` })),
+      { ...combinedBanners[0], loopKey: 'clone_tail' },
+    ];
+  }, [combinedBanners, bannerCount]);
+
   // Auto slide carousel management
   const stopAutoSlide = () => {
     if (autoSlideTimerRef.current) {
@@ -257,9 +298,9 @@ export default function HomeScreen({ navigation }) {
         animated: true,
       });
       currentIndexRef.current = nextIndex;
-      setActiveDotIndex((nextIndex - 1 + 4) % 4);
+      setActiveDotIndex((nextIndex - 1 + bannerCount) % bannerCount);
 
-      if (nextIndex === 5) {
+      if (nextIndex === bannerCount + 1) {
         // Smoothly wrapped to clone tail (clone of B0); reset position silently after animation
         if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
         resetTimeoutRef.current = setTimeout(() => {
@@ -280,7 +321,7 @@ export default function HomeScreen({ navigation }) {
       stopAutoSlide();
       if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
     };
-  }, []);
+  }, [bannerCount]);
 
   const handleScrollBeginDrag = () => {
     stopAutoSlide();
@@ -293,11 +334,11 @@ export default function HomeScreen({ navigation }) {
     if (index <= 0) {
       // Swiped left to clone head (clone of B3) -> jump instantly to real B3 at index 4
       bannerScrollRef.current?.scrollTo({
-        x: 4 * BANNER_WIDTH,
+        x: bannerCount * BANNER_WIDTH,
         animated: false,
       });
-      index = 4;
-    } else if (index >= 5) {
+      index = bannerCount;
+    } else if (index >= bannerCount + 1) {
       // Swiped right to clone tail (clone of B0) -> jump instantly to real B0 at index 1
       bannerScrollRef.current?.scrollTo({
         x: 1 * BANNER_WIDTH,
@@ -307,7 +348,7 @@ export default function HomeScreen({ navigation }) {
     }
 
     currentIndexRef.current = index;
-    setActiveDotIndex((index - 1 + 4) % 4);
+    setActiveDotIndex((index - 1 + bannerCount) % bannerCount);
     startAutoSlide();
   };
 
@@ -346,6 +387,26 @@ export default function HomeScreen({ navigation }) {
           mainScrollViewRef.current.scrollTo({ y: exploreSectionY, animated: true });
         } else if (mainScrollViewRef.current) {
           mainScrollViewRef.current.scrollTo({ y: 700, animated: true });
+        }
+        break;
+
+      case 'admin':
+        if (banner.linkType === 'ride') {
+          if (!rideEnabled) {
+            Alert.alert('Unavailable', 'Ride booking is temporarily disabled by admin.');
+            return;
+          }
+          if (!requireLocation()) return;
+          navigation.navigate('PlaceSearch', { mode: 'ride', currentLocation, field: 'drop' });
+        } else if (banner.linkType === 'parcel') {
+          if (!parcelEnabled) {
+            Alert.alert('Unavailable', 'Parcel delivery is temporarily disabled by admin.');
+            return;
+          }
+          if (!requireLocation()) return;
+          navigation.navigate('PlaceSearch', { mode: 'parcel', currentLocation, field: 'drop' });
+        } else if (banner.linkType === 'url' && banner.linkValue) {
+          Linking.openURL(banner.linkValue).catch(() => {});
         }
         break;
 
@@ -575,7 +636,7 @@ export default function HomeScreen({ navigation }) {
             onScrollBeginDrag={handleScrollBeginDrag}
             onMomentumScrollEnd={handleMomentumScrollEnd}
           >
-            {LOOP_BANNERS.map((banner) => (
+            {loopBanners.map((banner) => (
               <TouchableOpacity
                 key={banner.loopKey}
                 activeOpacity={0.9}
@@ -606,7 +667,7 @@ export default function HomeScreen({ navigation }) {
 
           {/* Carousel Indicator Dots */}
           <View style={styles.dotIndicatorRow}>
-            {LOCAL_BANNERS.map((_, i) => (
+            {combinedBanners.map((_, i) => (
               <View
                 key={i}
                 style={[
