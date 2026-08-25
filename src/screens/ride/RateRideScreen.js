@@ -1,7 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity,
+  TouchableWithoutFeedback,
+  Animated, TextInput, StyleSheet, Alert } from 'react-native';
 import { rateRide } from '../../api/rides';
 import { COLORS } from '../../utils/theme';
+import AnimatedButton from '../../components/AnimatedButton';
+
+
+const AnimatedStar = ({ n, rating, setRating }) => {
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.7, useNativeDriver: true }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1.2, useNativeDriver: true }).start(() => {
+        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+    });
+  };
+
+  return (
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={() => setRating(n)}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Text style={[styles.star, n <= rating && styles.starActive]}>★</Text>
+      </Animated.View>
+    </TouchableWithoutFeedback>
+  );
+};
 
 export default function RateRideScreen({ route, navigation }) {
   const { rideId } = route.params;
@@ -24,9 +53,7 @@ export default function RateRideScreen({ route, navigation }) {
 
       <View style={styles.stars}>
         {[1, 2, 3, 4, 5].map((n) => (
-          <TouchableOpacity key={n} onPress={() => setRating(n)}>
-            <Text style={[styles.star, n <= rating && styles.starActive]}>★</Text>
-          </TouchableOpacity>
+          <AnimatedStar key={n} n={n} rating={rating} setRating={setRating} />
         ))}
       </View>
 
@@ -39,9 +66,10 @@ export default function RateRideScreen({ route, navigation }) {
         placeholderTextColor={COLORS.textLight}
       />
 
-      <TouchableOpacity style={styles.button} onPress={submit}>
-        <Text style={styles.buttonText}>Submit</Text>
-      </TouchableOpacity>
+      <AnimatedButton
+        title="Submit"
+        onPress={submit}
+      />
 
       <TouchableOpacity onPress={() => navigation.replace('MainTabs')} style={{ marginTop: 14 }}>
         <Text style={{ textAlign: 'center', color: COLORS.textLight, fontWeight: '600' }}>Skip</Text>
