@@ -5,12 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
+
   Alert,
 } from 'react-native';
 import { verifyOtp, sendOtp } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../utils/theme';
+import AnimatedButton from '../../components/AnimatedButton';
 
 export default function OtpScreen({ route }) {
   const { phone } = route.params;
@@ -79,13 +80,13 @@ export default function OtpScreen({ route }) {
         />
       )}
 
-      <TouchableOpacity style={styles.button} onPress={submit} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color={COLORS.textPrimary} />
-        ) : (
-          <Text style={styles.buttonText}>{needsName ? 'Create account' : 'Verify'}</Text>
-        )}
-      </TouchableOpacity>
+      <AnimatedButton
+        title={needsName ? 'Create account' : 'Verify'}
+        onPress={submit}
+        loading={loading}
+        disabled={loading}
+        style={{ marginTop: 8 }}
+      />
 
       <TouchableOpacity onPress={resend} style={{ marginTop: 16 }}>
         <Text style={{ color: COLORS.blue, textAlign: 'center', fontWeight: '600' }}>Resend OTP</Text>

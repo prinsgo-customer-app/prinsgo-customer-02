@@ -4,6 +4,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Animated,
   StyleSheet,
   ScrollView,
   Alert,
@@ -19,6 +21,79 @@ import BottomNav from '../components/BottomNav';
 
 const { width } = Dimensions.get('window');
 const LABEL_ICONS = { home: '🏠', work: '💼', other: '📍' };
+
+
+const AnimatedSocialIcon = ({ item, index, isDark, onLink }) => {
+  const scaleAnim = React.useRef(new Animated.Value(0)).current;
+  const pressAnim = React.useRef(new Animated.Value(1)).current;
+  const opacityAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.sequence([
+      Animated.delay(index * 150),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(pressAnim, {
+      toValue: 0.85,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 10,
+    }).start();
+  };
+
+  return (
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={() => onLink(item.platform)}
+    >
+      <Animated.View
+        style={[
+          styles.socialIconWrap,
+          { backgroundColor: isDark ? '#1E293B' : '#E5E7EB' },
+          {
+            opacity: opacityAnim,
+            transform: [
+              { scale: scaleAnim },
+              { scale: pressAnim }
+            ],
+            shadowColor: item.color,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 5,
+            elevation: 5,
+          }
+        ]}
+      >
+        <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+      </Animated.View>
+    </TouchableWithoutFeedback>
+  );
+};
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout, refreshUser } = useAuth();
@@ -361,14 +436,14 @@ export default function ProfileScreen({ navigation }) {
             { platform: 'facebook', icon: '👤', color: '#1877F2' },
             { platform: 'twitter', icon: '🐦', color: '#1DA1F2' },
             { platform: 'linkedin', icon: '💼', color: '#0077B5' },
-          ].map((item) => (
-            <TouchableOpacity
+          ].map((item, index) => (
+            <AnimatedSocialIcon
               key={item.platform}
-              style={[styles.socialIconWrap, { backgroundColor: isDark ? '#1E293B' : '#E5E7EB' }]}
-              onPress={() => handleSocialLink(item.platform)}
-            >
-              <Text style={{ fontSize: 18 }}>{item.icon}</Text>
-            </TouchableOpacity>
+              item={item}
+              index={index}
+              isDark={isDark}
+              onLink={handleSocialLink}
+            />
           ))}
         </View>
 

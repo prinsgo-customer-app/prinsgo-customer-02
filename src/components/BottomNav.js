@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text,
+  TouchableWithoutFeedback,
+  Animated, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocalization } from '../context/LocalizationContext';
@@ -11,6 +13,60 @@ const TABS = [
   { key: 'Wallet', translationKey: 'wallet', icon: '💳' },
   { key: 'Profile', translationKey: 'profile', icon: '👤' },
 ];
+
+
+const AnimatedNavItem = ({ tab, active, handlePress, colors, t }) => {
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.85, useNativeDriver: true }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+  };
+
+  return (
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={() => handlePress(tab.key)}
+    >
+      <Animated.View style={[styles.bottomNavItem, { transform: [{ scale: scaleAnim }] }]}>
+        <Text style={[styles.bottomNavIcon, active === tab.key && styles.bottomNavIconActive, { opacity: active === tab.key ? 1 : 0.4 }]}>
+          {tab.icon}
+        </Text>
+        <Text style={[styles.bottomNavLabel, active === tab.key ? { color: colors.textPrimary, fontWeight: '700' } : { color: colors.textLight }]}>
+          {t(tab.translationKey)}
+        </Text>
+      </Animated.View>
+    </TouchableWithoutFeedback>
+  );
+};
+
+const AnimatedCenterItem = ({ tab, handlePress, colors }) => {
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.9, useNativeDriver: true }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+  };
+
+  return (
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={() => handlePress(tab.key)}
+    >
+      <Animated.View style={[styles.bottomNavItem, { transform: [{ scale: scaleAnim }] }]}>
+        <View style={[styles.bottomNavCenterButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+          <Text style={styles.bottomNavCenterIcon}>{tab.icon}</Text>
+        </View>
+      </Animated.View>
+    </TouchableWithoutFeedback>
+  );
+};
 
 export default function BottomNav({ active }) {
   const navigation =  (useNavigation());
@@ -29,20 +85,9 @@ export default function BottomNav({ active }) {
     <View style={[styles.bottomNav, { backgroundColor: colors.background, borderTopColor: colors.border, shadowColor: colors.shadow }]}>
       {TABS.map((tab) =>
         tab.isCenter ? (
-          <TouchableOpacity key={tab.key} style={styles.bottomNavItem} onPress={() => handlePress(tab.key)}>
-            <View style={[styles.bottomNavCenterButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
-              <Text style={styles.bottomNavCenterIcon}>{tab.icon}</Text>
-            </View>
-          </TouchableOpacity>
+          <AnimatedCenterItem key={tab.key} tab={tab} handlePress={handlePress} colors={colors} />
         ) : (
-          <TouchableOpacity key={tab.key} style={styles.bottomNavItem} onPress={() => handlePress(tab.key)}>
-            <Text style={[styles.bottomNavIcon, active === tab.key && styles.bottomNavIconActive, { opacity: active === tab.key ? 1 : 0.4 }]}>
-              {tab.icon}
-            </Text>
-            <Text style={[styles.bottomNavLabel, active === tab.key ? { color: colors.textPrimary, fontWeight: '700' } : { color: colors.textLight }]}>
-              {t(tab.translationKey)}
-            </Text>
-          </TouchableOpacity>
+          <AnimatedNavItem key={tab.key} tab={tab} active={active} handlePress={handlePress} colors={colors} t={t} />
         )
       )}
     </View>
