@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Animated,
 } from 'react-native';
 import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
@@ -15,11 +16,90 @@ import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
 import { COLORS } from '../utils/theme';
 import { formatId } from '../utils/idGenerator';
+import AnimatedCard from '../components/AnimatedCard';
 
 const STATUS_COLORS = {
   completed: COLORS.green,
   delivered: COLORS.green,
   cancelled: COLORS.red,
+  active: COLORS.primary,
+  pending: COLORS.orange,
+};
+
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+
+const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId }) => {
+  const isCompleted = item.status === 'completed' || item.status === 'delivered';
+
+
+  return (
+    <AnimatedCard delay={index * 50} style={styles.card}>
+      <View style={styles.cardTop}>
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>
+            {tab === 'rides' ? '🚗 RIDE' : '📦 PARCEL'}
+          </Text>
+        </View>
+        <View style={[
+          styles.statusBadge,
+          { backgroundColor: (STATUS_COLORS[item.status] || COLORS.border) + '20' }
+        ]}>
+          <Text style={[styles.status, { color: STATUS_COLORS[item.status] || COLORS.textSecondary }]}>
+            {item.status}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.cardBody}>
+        <Text style={styles.date}>
+          {new Date(item.createdAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+        <Text style={styles.idText}>ID: {tab === 'rides' ? formatId('RID', item._id) : formatId('PRC', item._id)}</Text>
+
+        <View style={styles.routeContainer}>
+          {tab === 'rides' ? (
+            <>
+              <View style={styles.routePoint}>
+                <View style={[styles.dot, { backgroundColor: COLORS.primary }]} />
+                <Text style={styles.address} numberOfLines={1}>{item.pickup?.address}</Text>
+              </View>
+              <View style={styles.routeLine} />
+              <View style={styles.routePoint}>
+                <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
+                <Text style={styles.address} numberOfLines={1}>{item.drop?.address}</Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.routePoint}>
+              <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
+              <Text style={styles.address} numberOfLines={2}>To: {item.drop?.contactName} · {item.drop?.address}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.fareContainer}>
+          <Text style={styles.fareLabel}>Total Fare</Text>
+          <Text style={styles.fare}>
+            ₹{Math.round(tab === 'rides' ? (item.fare?.totalFare || 0) : (item.charges?.totalCharge || 0))}
+          </Text>
+        </View>
+      </View>
+
+      {isCompleted && (
+        <TouchableOpacity
+          style={styles.invoiceButton}
+          onPress={() => downloadInvoice(item)}
+          disabled={downloadingId === item._id}
+        >
+          {downloadingId === item._id ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Text style={styles.invoiceButtonText}>Download Invoice</Text>
+          )}
+        </TouchableOpacity>
+      )}
+    </AnimatedCard>
+  );
 };
 
 export default function HistoryScreen({ route }) {
@@ -71,26 +151,26 @@ export default function HistoryScreen({ route }) {
     }
   };
 
-  const isCompleted = (item) => item.status === 'completed' || item.status === 'delivered';
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Bookings</Text>
+        <Text style={styles.title}>My Bookings</Text>
       </View>
 
-      <View style={styles.tabRow}>
+      <View style={styles.segmentContainer}>
         <TouchableOpacity
-          style={[styles.tab, tab === 'rides' && styles.tabActive]}
+          style={[styles.segmentTab, tab === 'rides' && styles.segmentTabActive]}
           onPress={() => setTab('rides')}
+          activeOpacity={0.8}
         >
-          <Text style={[styles.tabText, tab === 'rides' && styles.tabTextActive]}>🚗 Rides</Text>
+          <Text style={[styles.segmentText, tab === 'rides' && styles.segmentTextActive]}>Rides</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'parcels' && styles.tabActive]}
+          style={[styles.segmentTab, tab === 'parcels' && styles.segmentTabActive]}
           onPress={() => setTab('parcels')}
+          activeOpacity={0.8}
         >
-          <Text style={[styles.tabText, tab === 'parcels' && styles.tabTextActive]}>📦 Parcels</Text>
+          <Text style={[styles.segmentText, tab === 'parcels' && styles.segmentTextActive]}>Parcels</Text>
         </TouchableOpacity>
       </View>
 
@@ -99,52 +179,28 @@ export default function HistoryScreen({ route }) {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
-        <FlatList
+        <AnimatedFlatList
           data={items}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              No {tab === 'rides' ? 'ride' : 'parcel'} history yet.
-            </Text>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardTop}>
-                <Text style={styles.date}>
-                  ID: {tab === 'rides' ? formatId('RID', item._id) : formatId('PRC', item._id)} · {new Date(item.createdAt).toLocaleDateString()}
-                </Text>
-                <Text style={[styles.status, { color: STATUS_COLORS[item.status] || COLORS.textLight }]}>
-                  {item.status}
-                </Text>
-              </View>
-              {tab === 'rides' ? (
-                <>
-                  <Text style={styles.address}>From: {item.pickup?.address}</Text>
-                  <Text style={styles.address}>To: {item.drop?.address}</Text>
-                  <Text style={styles.fare}>₹{Math.round(item.fare?.totalFare || 0)}</Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.address}>To: {item.drop?.contactName} · {item.drop?.address}</Text>
-                  <Text style={styles.fare}>₹{Math.round(item.charges?.totalCharge || 0)}</Text>
-                </>
-              )}
-              {isCompleted(item) && (
-                <TouchableOpacity
-                  style={styles.invoiceButton}
-                  onPress={() => downloadInvoice(item)}
-                  disabled={downloadingId === item._id}
-                >
-                  {downloadingId === item._id ? (
-                    <ActivityIndicator size="small" color={COLORS.primary} />
-                  ) : (
-                    <Text style={styles.invoiceButtonText}>📄 Download Invoice</Text>
-                  )}
-                </TouchableOpacity>
-              )}
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>{tab === 'rides' ? '🚖' : '📦'}</Text>
+              <Text style={styles.emptyTitle}>No {tab === 'rides' ? 'rides' : 'parcels'} yet</Text>
+              <Text style={styles.emptyText}>
+                Your past and upcoming bookings will appear here.
+              </Text>
             </View>
+          }
+          renderItem={({ item, index }) => (
+            <BookingCard
+              item={item}
+              tab={tab}
+              index={index}
+              downloadInvoice={downloadInvoice}
+              downloadingId={downloadingId}
+            />
           )}
         />
       )}
@@ -156,35 +212,62 @@ export default function HistoryScreen({ route }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 20, paddingTop: 60 },
+  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10 },
   title: { fontSize: 28, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -0.5 },
-  tabRow: { flexDirection: 'row', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
-  tab: { flex: 1, paddingVertical: 14, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: COLORS.primary },
-  tabText: { fontSize: 15, color: COLORS.textLight, fontWeight: '600' },
-  tabTextActive: { color: COLORS.textPrimary, fontWeight: '800' },
-  emptyText: { textAlign: 'center', color: COLORS.textLight, marginTop: 60, fontSize: 15, fontWeight: '500' },
-  card: {
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.cardBg,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    padding: 4,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-    backgroundColor: COLORS.cardBg,
+    marginBottom: 16,
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  segmentTabActive: {
+    backgroundColor: COLORS.primary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     elevation: 2,
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  date: { fontSize: 13, color: COLORS.textLight, fontWeight: '600' },
-  status: { fontSize: 13, fontWeight: '800', textTransform: 'capitalize' },
-  address: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 4, fontWeight: '500', lineHeight: 20 },
-  fare: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary, marginTop: 8 },
+  segmentText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '700' },
+  segmentTextActive: { color: '#000', fontWeight: '800' },
+  emptyContainer: { alignItems: 'center', marginTop: 80, paddingHorizontal: 40 },
+  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
+  emptyText: { textAlign: 'center', color: COLORS.textLight, fontSize: 15, fontWeight: '500', lineHeight: 22 },
+  card: {
+    padding: 20,
+    marginBottom: 16,
+    borderRadius: 20,
+    backgroundColor: COLORS.cardBg,
+  },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  badgeContainer: { backgroundColor: COLORS.border, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 0.5 },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  status: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardBody: { marginBottom: 4 },
+  date: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '800', marginBottom: 4 },
+  idText: { fontSize: 13, color: COLORS.textLight, fontWeight: '600', marginBottom: 16 },
+  routeContainer: { marginBottom: 16 },
+  routePoint: { flexDirection: 'row', alignItems: 'center' },
+  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  address: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600', flex: 1 },
+  routeLine: { width: 2, height: 16, backgroundColor: COLORS.border, marginLeft: 4, marginVertical: 4 },
+  fareContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
+  fareLabel: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '700' },
+  fare: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary },
   invoiceButton: {
-    marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 14, alignItems: 'center',
-    flexDirection: 'row', justifyContent: 'center', gap: 6
+    marginTop: 16, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
   },
   invoiceButtonText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
 });

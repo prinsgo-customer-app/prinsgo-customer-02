@@ -24,6 +24,8 @@ const LABEL_ICONS = { home: '🏠', work: '💼', other: '📍' };
 
 
 const AnimatedSocialIcon = ({ item, index, isDark, onLink }) => {
+  const [isTooltipVisible, setTooltipVisible] = React.useState(false);
+  const tooltipAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const pressAnim = React.useRef(new Animated.Value(1)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
