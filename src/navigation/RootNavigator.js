@@ -35,6 +35,11 @@ import SafetyScreen from '../screens/SafetyScreen';
 import HelpScreen from '../screens/HelpScreen';
 import RentalsScreen from '../screens/RentalsScreen';
 
+// Workers Screens
+import WorkersScreen from '../screens/workers/WorkersScreen';
+import WorkerDetailsScreen from '../screens/workers/WorkerDetailsScreen';
+import WorkerBookingScreen from '../screens/workers/WorkerBookingScreen';
+
 import BottomNav from '../components/BottomNav';
 
 const Stack = createNativeStackNavigator();
@@ -112,6 +117,9 @@ function MainStack() {
       <Stack.Screen name="Safety" component={SafetyScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="Rentals" component={RentalsScreen} />
+      <Stack.Screen name="Workers" component={WorkersScreen} />
+      <Stack.Screen name="WorkerDetails" component={WorkerDetailsScreen} />
+      <Stack.Screen name="WorkerBooking" component={WorkerBookingScreen} />
     </Stack.Navigator>
   );
 }

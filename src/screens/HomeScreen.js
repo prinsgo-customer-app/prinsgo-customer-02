@@ -179,6 +179,7 @@ export default function HomeScreen({ navigation }) {
   const [rideEnabled, setRideEnabled] = useState(true);
   const [parcelEnabled, setParcelEnabled] = useState(true);
   const [rentalsEnabled, setRentalsEnabled] = useState(true);
+  const [workersEnabled, setWorkersEnabled] = useState(true);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [exploreSights, setExploreSights] = useState(DEFAULT_EXPLORE_LOCATIONS);
 
@@ -458,11 +459,13 @@ export default function HomeScreen({ navigation }) {
       const rideToggle = toggles.find((t) => t.key === 'ride_booking' || t.key === 'ride');
       const parcelToggle = toggles.find((t) => t.key === 'parcel_booking' || t.key === 'parcel');
       const rentalsToggle = toggles.find((t) => t.key === 'rentals');
+      const workersToggle = toggles.find((t) => t.key === 'workers');
       const maintenanceToggle = toggles.find((t) => t.key === 'maintenance_mode');
 
       if (rideToggle) setRideEnabled(rideToggle.isEnabled);
       if (parcelToggle) setParcelEnabled(parcelToggle.isEnabled);
       if (rentalsToggle) setRentalsEnabled(rentalsToggle.isEnabled);
+      if (workersToggle) setWorkersEnabled(workersToggle.isEnabled);
       if (maintenanceToggle && maintenanceToggle.isEnabled) {
         setIsMaintenance(true);
       }
@@ -480,6 +483,8 @@ export default function HomeScreen({ navigation }) {
         setMode('parcel');
       } else if (rideToggle && !rideToggle.isEnabled && !parcelToggle?.isEnabled && rentalsToggle?.isEnabled) {
         setMode('rentals');
+      } else if (rideToggle && !rideToggle.isEnabled && !parcelToggle?.isEnabled && !rentalsToggle?.isEnabled && workersToggle?.isEnabled) {
+        setMode('workers');
       }
     } catch (err) {
       // ignore configuration fetch errors
@@ -736,6 +741,26 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Hourly / Daily car</Text>
               </TouchableOpacity>
             )}
+
+            {workersEnabled && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[
+                  styles.serviceSelectorCard,
+                  { backgroundColor: colors.cardBg, borderColor: mode === 'workers' ? colors.primary : colors.border },
+                ]}
+                onPress={() => {
+                  setMode('workers');
+                  navigation.navigate('Workers');
+                }}
+              >
+                <View style={[styles.serviceImageContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }]}>
+                  <Text style={{ fontSize: 32 }}>🛠️</Text>
+                </View>
+                <Text style={[styles.serviceSelectorTitle, { color: colors.textPrimary }]}>Workers</Text>
+                <Text style={[styles.serviceSelectorSubtitle, { color: colors.textSecondary }]}>Book professionals</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -830,6 +855,16 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Help')}>
             <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🎧</Text></View>
             <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Help</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickItem} onPress={() => {
+            if (!workersEnabled) {
+              Alert.alert('Unavailable', 'Workers service is temporarily disabled by admin.');
+              return;
+            }
+            navigation.navigate('Workers');
+          }}>
+            <View style={[styles.quickIconWrap, { backgroundColor: colors.cardBg }]}><Text style={styles.quickIcon}>🛠️</Text></View>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>Workers</Text>
           </TouchableOpacity>
         </View>
 
