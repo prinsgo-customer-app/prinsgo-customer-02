@@ -72,6 +72,7 @@ export const generateWorkerInvoice = async (worker) => {
     <h4 style="margin-top:20px; border-bottom:1px solid #eee; padding-bottom:8px;">Charge Breakdown</h4>
     <table width="100%">
       ${row('Total Charge', `₹${Math.round(worker.price || worker.estimatedPrice || worker.charges?.totalCharge || worker.fare?.totalFare || 0)}`, true)}
+      ${row('Total Charge', `₹${Math.round(worker.price || worker.estimatedPrice || 0)}`, true)}
     </table>
   `);
   const { uri } = await Print.printToFileAsync({ html });
