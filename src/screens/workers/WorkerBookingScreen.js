@@ -20,6 +20,7 @@ export default function WorkerBookingScreen({ route, navigation }) {
   const [time, setTime] = useState('10:00 AM');
   const [address, setAddress] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'wallet' | 'upi'
   const [loading, setLoading] = useState(false);
 
   const handleBooking = async () => {
@@ -41,11 +42,17 @@ export default function WorkerBookingScreen({ route, navigation }) {
         time,
         address,
         taskDescription,
+        paymentMethod,
       };
-      await createWorkerBooking(payload);
-      Alert.alert('Success', 'Your booking request has been sent to the worker!', [
-        { text: 'OK', onPress: () => navigation.navigate('History', { initialTab: 'workers' }) }
-      ]);
+      const res = await createWorkerBooking(payload);
+      const bookingId = res?.data?.booking?._id || res?.data?.job?._id || res?.data?.workerBooking?._id || res?.data?.data?._id || res?.data?._id;
+      if (bookingId) {
+        navigation.replace('LiveWorker', { bookingId });
+      } else {
+        Alert.alert('Success', 'Your booking request has been sent to the worker!', [
+          { text: 'OK', onPress: () => navigation.replace('History', { initialTab: 'workers' }) }
+        ]);
+      }
     } catch (err) {
       Alert.alert('Booking Failed', err?.message || 'Could not create booking. Please try again.');
     } finally {
@@ -121,8 +128,30 @@ export default function WorkerBookingScreen({ route, navigation }) {
           Final price will be decided after inspection by the professional.
         </Text>
 
+        <Text style={[styles.label, { color: colors.textPrimary, marginBottom: 12 }]}>Payment Method</Text>
+        <View style={styles.paymentSelectorRow}>
+          <TouchableOpacity
+            style={[styles.paymentBtn, paymentMethod === 'cash' && { borderColor: colors.primary, backgroundColor: colors.cardBg }]}
+            onPress={() => setPaymentMethod('cash')}
+          >
+            <Text style={[styles.paymentText, { color: colors.textPrimary }]}>💵 Cash</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentBtn, paymentMethod === 'wallet' && { borderColor: colors.primary, backgroundColor: colors.cardBg }]}
+            onPress={() => setPaymentMethod('wallet')}
+          >
+            <Text style={[styles.paymentText, { color: colors.textPrimary }]}>💳 Wallet</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentBtn, paymentMethod === 'upi' && { borderColor: colors.primary, backgroundColor: colors.cardBg }]}
+            onPress={() => setPaymentMethod('upi')}
+          >
+            <Text style={[styles.paymentText, { color: colors.textPrimary }]}>📱 UPI App</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
-          style={[styles.confirmBtn, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
+          style={[styles.confirmBtn, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1, marginTop: 20 }]}
           onPress={handleBooking}
           disabled={loading}
         >
@@ -182,6 +211,23 @@ const styles = StyleSheet.create({
   },
   priceLabel: { fontSize: 14, fontWeight: '600' },
   priceValue: { fontSize: 20, fontWeight: '900' },
+  paymentSelectorRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  paymentBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  paymentText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   confirmBtn: {
     paddingVertical: 16,
     borderRadius: 14,

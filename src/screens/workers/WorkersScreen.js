@@ -51,7 +51,7 @@ export default function WorkersScreen({ navigation }) {
     try {
       const [catRes, workerRes] = await Promise.all([
         getWorkersCategories().catch(() => ({ data: { categories: [] } })),
-        getWorkers({ category: selectedCategory, search: searchQuery }).catch(() => ({ data: { workers: [] } })),
+        getWorkers({ categoryId: selectedCategory, search: searchQuery }).catch(() => ({ data: { workers: [] } })),
       ]);
       setCategories(catRes.data?.categories || []);
       setWorkers(workerRes.data?.workers || []);
@@ -67,12 +67,15 @@ export default function WorkersScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 400);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]);
+  }, [selectedCategory, searchQuery]);
 
   const handleSearchSubmit = () => {
-    loadData();
+    // Handled by debounce
   };
 
   return (
@@ -122,16 +125,16 @@ export default function WorkersScreen({ navigation }) {
           >
             <Text style={{ color: selectedCategory === '' ? '#fff' : colors.textPrimary, fontWeight: '700' }}>All</Text>
           </TouchableOpacity>
-          {categories.map((cat, idx) => (
+          {categories.filter(c => c.isActive !== false).map((cat, idx) => (
             <TouchableOpacity
               key={cat._id || idx}
               style={[
                 styles.categoryBtn,
-                { backgroundColor: selectedCategory === cat.name ? colors.primary : colors.cardBg, borderColor: colors.border }
+                { backgroundColor: selectedCategory === cat._id ? colors.primary : colors.cardBg, borderColor: colors.border }
               ]}
-              onPress={() => setSelectedCategory(cat.name)}
+              onPress={() => setSelectedCategory(cat._id)}
             >
-              <Text style={{ color: selectedCategory === cat.name ? '#fff' : colors.textPrimary, fontWeight: '700' }}>
+              <Text style={{ color: selectedCategory === cat._id ? '#fff' : colors.textPrimary, fontWeight: '700' }}>
                 {cat.name}
               </Text>
             </TouchableOpacity>

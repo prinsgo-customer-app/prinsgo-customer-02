@@ -13,11 +13,12 @@ import {
 import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
 import { getWorkerHistory } from '../api/workers';
-import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
+import { generateRideInvoice, generateParcelInvoice, generateWorkerInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
 import { COLORS } from '../utils/theme';
 import { formatId } from '../utils/idGenerator';
 import AnimatedCard from '../components/AnimatedCard';
+import { joinWorkerRoom, onWorkerStatusUpdate } from '../api/socket';
 
 const STATUS_COLORS = {
   completed: COLORS.green,
@@ -29,12 +30,20 @@ const STATUS_COLORS = {
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId }) => {
+const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigation }) => {
   const isCompleted = item.status === 'completed' || item.status === 'delivered';
 
 
   return (
-    <AnimatedCard delay={index * 50} style={styles.card}>
+    <AnimatedCard
+      delay={index * 50}
+      style={styles.card}
+      onPress={() => {
+        if (tab === 'workers') {
+          navigation.navigate('LiveWorker', { bookingId: item._id });
+        }
+      }}
+    >
       <View style={styles.cardTop}>
         <View style={styles.badgeContainer}>
           <Text style={styles.badgeText}>
@@ -108,7 +117,7 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId }) => {
   );
 };
 
-export default function HistoryScreen({ route }) {
+export default function HistoryScreen({ route, navigation }) {
   const [tab, setTab] = useState(route?.params?.initialTab || 'rides');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +149,27 @@ export default function HistoryScreen({ route }) {
     load(tab);
   }, [tab, load]);
 
+  useEffect(() => {
+    if (tab !== 'workers') return;
+    const unsubscribe = onWorkerStatusUpdate((update) => {
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === update.workerId || item._id === update.bookingId || item._id === update.id ? { ...item, status: update.status } : item
+        )
+      );
+    });
+    return () => unsubscribe();
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab !== 'workers' || items.length === 0) return;
+    items.forEach(item => {
+      if (item.status !== 'completed' && item.status !== 'cancelled') {
+        joinWorkerRoom(item._id);
+      }
+    });
+  }, [items.length, tab]);
+
   const onRefresh = () => {
     setRefreshing(true);
     load(tab);
@@ -150,6 +180,8 @@ export default function HistoryScreen({ route }) {
     try {
       if (tab === 'rides') {
         await generateRideInvoice(item);
+      } else if (tab === 'workers') {
+        await generateWorkerInvoice(item);
       } else {
         await generateParcelInvoice(item);
       }
@@ -216,6 +248,7 @@ export default function HistoryScreen({ route }) {
               index={index}
               downloadInvoice={downloadInvoice}
               downloadingId={downloadingId}
+              navigation={navigation}
             />
           )}
         />
