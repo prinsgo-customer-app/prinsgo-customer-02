@@ -168,7 +168,7 @@ export default function HistoryScreen({ route, navigation }) {
         joinWorkerRoom(item._id);
       }
     });
-  }, [items.length, tab]);
+  }, [items, tab]);
 
   const onRefresh = () => {
     setRefreshing(true);
