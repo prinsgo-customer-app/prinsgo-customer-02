@@ -56,6 +56,26 @@ export const generateRideInvoice = async (ride) => {
   await shareFile(uri);
 };
 
+export const generateWorkerInvoice = async (worker) => {
+  const html = wrapHtml(`
+    <h3 style="border-bottom:1px solid #eee; padding-bottom:8px;">Worker Invoice</h3>
+    <table width="100%">
+      ${row('Booking ID', worker._id?.slice(-8)?.toUpperCase())}
+      ${row('Date', new Date(worker.createdAt).toLocaleString())}
+      ${row('Worker Name', worker.worker?.name || worker.workerName || 'N/A')}
+      ${row('Category', worker.category || 'Service')}
+      ${row('Status', worker.status)}
+      ${row('Payment Method', worker.paymentMethod || 'cash')}
+    </table>
+    <h4 style="margin-top:20px; border-bottom:1px solid #eee; padding-bottom:8px;">Charge Breakdown</h4>
+    <table width="100%">
+      ${row('Total Charge', `₹${Math.round(worker.price || worker.estimatedPrice || 0)}`, true)}
+    </table>
+  `);
+  const { uri } = await Print.printToFileAsync({ html });
+  await shareFile(uri);
+};
+
 export const generateParcelInvoice = async (parcel) => {
   const charges = parcel.charges || {};
   const html = wrapHtml(`

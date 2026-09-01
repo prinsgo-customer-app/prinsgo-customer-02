@@ -2,7 +2,7 @@ import apiClient from './client';
 
 export const getWorkersCategories = () => apiClient.get('/workers/categories');
 
-export const getWorkers = (params) => apiClient.get('/workers/search', { params });
+export const getWorkers = (params) => apiClient.get('/workers', { params });
 
 export const getWorkerById = (id) => apiClient.get(`/workers/${id}`);
 

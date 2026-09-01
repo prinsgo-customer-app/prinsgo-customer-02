@@ -39,6 +39,7 @@ import RentalsScreen from '../screens/RentalsScreen';
 import WorkersScreen from '../screens/workers/WorkersScreen';
 import WorkerDetailsScreen from '../screens/workers/WorkerDetailsScreen';
 import WorkerBookingScreen from '../screens/workers/WorkerBookingScreen';
+import LiveWorkerScreen from '../screens/workers/LiveWorkerScreen';
 
 import BottomNav from '../components/BottomNav';
 
@@ -120,6 +121,7 @@ function MainStack() {
       <Stack.Screen name="Workers" component={WorkersScreen} />
       <Stack.Screen name="WorkerDetails" component={WorkerDetailsScreen} />
       <Stack.Screen name="WorkerBooking" component={WorkerBookingScreen} />
+      <Stack.Screen name="LiveWorker" component={LiveWorkerScreen} />
     </Stack.Navigator>
   );
 }
