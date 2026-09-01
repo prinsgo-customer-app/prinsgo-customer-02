@@ -5,11 +5,11 @@ import { COLORS } from '../../utils/theme';
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
-    const timer = window.setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const onboarded = await AsyncStorage.getItem('prinsgo_onboarded');
       navigation.replace(onboarded ? 'Login' : 'Onboarding');
     }, 1500);
-    return () => window.clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

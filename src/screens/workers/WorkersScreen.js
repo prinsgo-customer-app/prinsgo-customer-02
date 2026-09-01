@@ -170,13 +170,13 @@ export default function WorkersScreen({ navigation }) {
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.workerCategory, { color: colors.textSecondary }]}>{worker.category}</Text>
+                  <Text style={[styles.workerCategory, { color: colors.textSecondary }]}>{worker.category || worker.workerServiceCategories?.[0]?.name}</Text>
                   <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '700', marginTop: 4 }}>
                     ⭐ {worker.rating || 'New'} • {worker.completedJobs || 0} jobs done
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.priceTag, { color: colors.textPrimary }]}>₹{worker.startingPrice || 0}</Text>
+                  <Text style={[styles.priceTag, { color: colors.textPrimary }]}>₹{worker.basePrice || worker.startingPrice || 0}</Text>
                   <Text style={{ fontSize: 10, color: colors.textLight }}>Starts at</Text>
                   <TouchableOpacity
                     style={[styles.bookBtnSmall, { backgroundColor: colors.primary }]}

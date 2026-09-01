@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { getWorkerById } from '../../api/workers';
+import { getWorkerBookingById } from '../../api/workers';
 import { joinWorkerRoom, onWorkerStatusUpdate } from '../../api/socket';
 import { COLORS } from '../../utils/theme';
 import { formatId } from '../../utils/idGenerator';
@@ -40,7 +40,7 @@ export default function LiveWorkerScreen({ route, navigation }) {
     }
 
     try {
-      const res = await getWorkerById(bookingId);
+      const res = await getWorkerBookingById(bookingId);
       const fetchedBooking = res?.data?.booking || res?.data?.workerBooking || res?.data?.job || res?.data;
 
       if (fetchedBooking) {
@@ -81,10 +81,10 @@ export default function LiveWorkerScreen({ route, navigation }) {
       console.log("Socket Update Error:", e);
     }
 
-    const timer = window.setInterval(fetchBooking, 5000);
+    const timer = setInterval(fetchBooking, 5000);
 
     return () => {
-      window.clearInterval(timer);
+      clearInterval(timer);
       unsubscribe();
     };
   }, [fetchBooking, bookingId]);
