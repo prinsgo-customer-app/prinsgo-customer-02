@@ -66,7 +66,7 @@ export default function WorkerDetailsScreen({ route, navigation }) {
             <Text style={{ fontSize: 40 }}>🧑‍🔧</Text>
           </View>
           <Text style={[styles.name, { color: colors.textPrimary }]}>{worker.name}</Text>
-          <Text style={[styles.category, { color: colors.textSecondary }]}>{worker.category}</Text>
+          <Text style={[styles.category, { color: colors.textSecondary }]}>{worker.category || worker.workerServiceCategories?.[0]?.name}</Text>
 
           {worker.verified && (
             <View style={[styles.verifiedBadge, { backgroundColor: colors.green + '20' }]}>
@@ -93,14 +93,14 @@ export default function WorkerDetailsScreen({ route, navigation }) {
         {/* About */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>About</Text>
         <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
-          {worker.about || `${worker.name} is a highly rated professional offering excellent ${worker.category.toLowerCase()} services.`}
+          {worker.about || `${worker.name} is a highly rated professional offering excellent ${String(worker.category || worker.workerServiceCategories?.[0]?.name || '').toLowerCase()} services.`}
         </Text>
 
         {/* Services & Pricing */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Services & Pricing</Text>
         <View style={[styles.pricingBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
           <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>Starting Price (Inspection/Visit)</Text>
-          <Text style={[styles.pricingValue, { color: colors.textPrimary }]}>₹{worker.startingPrice || 199}</Text>
+          <Text style={[styles.pricingValue, { color: colors.textPrimary }]}>₹{worker.basePrice || worker.startingPrice || 199}</Text>
         </View>
 
         {worker.servicesOffered && worker.servicesOffered.length > 0 && (
@@ -124,7 +124,7 @@ export default function WorkerDetailsScreen({ route, navigation }) {
 
         <TouchableOpacity
           style={[styles.bookBtn, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('WorkerBooking', { workerId: worker._id, workerName: worker.name, category: worker.category, basePrice: worker.startingPrice })}
+          onPress={() => navigation.navigate('WorkerBooking', { workerId: worker._id, workerName: worker.name, category: worker.category || worker.workerServiceCategories?.[0]?.name, basePrice: worker.basePrice || worker.startingPrice })}
         >
           <Text style={[styles.bookText, { color: colors.textPrimary }]}>Book Now</Text>
         </TouchableOpacity>

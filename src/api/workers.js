@@ -8,4 +8,6 @@ export const getWorkerById = (id) => apiClient.get(`/workers/${id}`);
 
 export const createWorkerBooking = (payload) => apiClient.post('/workers/book', payload);
 
-export const getWorkerHistory = (page = 1, limit = 30) => apiClient.get('/workers/history', { params: { page, limit } });
+export const getWorkerBookingById = (id) => apiClient.get(`/workers/bookings/${id}`);
+
+export const getWorkerHistory = (page = 1, limit = 30) => apiClient.get('/workers/bookings/history', { params: { page, limit } });
