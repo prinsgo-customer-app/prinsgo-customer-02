@@ -81,10 +81,10 @@ export default function LiveWorkerScreen({ route, navigation }) {
       console.log("Socket Update Error:", e);
     }
 
-    const timer = window.setInterval(fetchBooking, 5000);
+    const timer = setInterval(fetchBooking, 5000);
 
     return () => {
-      window.clearInterval(timer);
+      clearInterval(timer);
       unsubscribe();
     };
   }, [fetchBooking, bookingId]);
