@@ -101,17 +101,28 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
       </View>
 
       {isCompleted && (
-        <TouchableOpacity
-          style={styles.invoiceButton}
-          onPress={() => downloadInvoice(item)}
-          disabled={downloadingId === item._id}
-        >
-          {downloadingId === item._id ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : (
-            <Text style={styles.invoiceButtonText}>Download Invoice</Text>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+          <TouchableOpacity
+            style={[styles.invoiceButton, { flex: 1, marginTop: 0 }]}
+            onPress={() => downloadInvoice(item)}
+            disabled={downloadingId === item._id}
+          >
+            {downloadingId === item._id ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Text style={styles.invoiceButtonText}>Download Invoice</Text>
+            )}
+          </TouchableOpacity>
+
+          {tab === 'workers' && (
+             <TouchableOpacity
+             style={[styles.invoiceButton, { flex: 1, marginTop: 0, backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
+             onPress={() => navigation.navigate('WorkerReview', { bookingId: item._id })}
+           >
+             <Text style={[styles.invoiceButtonText, { color: COLORS.textPrimary }]}>Rate & Review</Text>
+           </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
       )}
     </AnimatedCard>
   );

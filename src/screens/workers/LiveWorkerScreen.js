@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { getWorkerBookingById } from '../../api/workers';
+import { getWorkerBookingById, cancelWorkerBooking, rescheduleWorkerBooking } from '../../api/workers';
 import { joinWorkerRoom, onWorkerStatusUpdate } from '../../api/socket';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS } from '../../utils/theme';
 import { formatId } from '../../utils/idGenerator';
 
@@ -32,6 +33,11 @@ export default function LiveWorkerScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [showReschedulePicker, setShowReschedulePicker] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState(new Date());
+  const [showRescheduleTimePicker, setShowRescheduleTimePicker] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const fetchBooking = useCallback(async () => {
     if (!bookingId) {
       setErrorMsg("Booking ID is missing from navigation.");
@@ -45,9 +51,8 @@ export default function LiveWorkerScreen({ route, navigation }) {
 
       if (fetchedBooking) {
         setBooking(fetchedBooking);
-        if (fetchedBooking.status === 'completed') {
-          navigation.replace('History', { initialTab: 'workers' });
-        }
+        // Do not force navigation, keep user on tracker so they can review invoice/rate from History explicitly,
+        // or add a completed states handler explicitly below the live status block.
       } else {
         setErrorMsg("Booking data not found on server.");
       }
@@ -97,6 +102,35 @@ export default function LiveWorkerScreen({ route, navigation }) {
       </View>
     );
   }
+
+  const handleCancelBooking = async () => {
+    setIsProcessing(true);
+    try {
+      await cancelWorkerBooking(bookingId, 'User requested cancellation');
+      Alert.alert("Success", "Booking has been cancelled.");
+      navigation.replace("MainTabs");
+    } catch (err) {
+      Alert.alert("Error", err?.response?.data?.message || err?.message || "Could not cancel booking");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRescheduleSubmit = async () => {
+    setIsProcessing(true);
+    try {
+      await rescheduleWorkerBooking(bookingId, {
+        date: rescheduleDate.toISOString().split('T')[0],
+        time: rescheduleDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+      Alert.alert("Success", "Booking rescheduled successfully.");
+      fetchBooking();
+    } catch (err) {
+      Alert.alert("Error", err?.response?.data?.message || err?.message || "Could not reschedule booking");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (errorMsg || !booking) {
     return (
@@ -160,31 +194,90 @@ export default function LiveWorkerScreen({ route, navigation }) {
         ) : null}
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-          {(booking?.status === 'requested' || booking?.status === 'pending' || booking?.status === 'accepted' || booking?.status === 'assigned') ? (
-            <TouchableOpacity
-              style={[styles.cancelButton, { flex: 1, marginTop: 0 }]}
-              onPress={() => {
-                Alert.alert(
-                  "Cancel Booking",
-                  "Do you want to cancel this booking?",
-                  [
-                    { text: "No" },
-                    {
-                      text: "Yes, Cancel",
-                      style: 'destructive',
-                      onPress: async () => {
-                          navigation.replace("MainTabs");
+          {booking?.status === 'completed' ? (
+             <TouchableOpacity
+             style={[styles.goHomeBtn, { flex: 1, marginTop: 0, backgroundColor: COLORS.primary }]}
+             onPress={() => navigation.replace('History', { initialTab: 'workers' })}
+           >
+             <Text style={[styles.goHomeText, { color: COLORS.textPrimary }]}>View in History (Rate & Invoice)</Text>
+           </TouchableOpacity>
+          ) : (booking?.status === 'requested' || booking?.status === 'pending' || booking?.status === 'accepted' || booking?.status === 'assigned') ? (
+            <>
+              <TouchableOpacity
+                style={[styles.cancelButton, { flex: 1, marginTop: 0 }]}
+                disabled={isProcessing}
+                onPress={() => {
+                  Alert.alert(
+                    "Cancel Booking",
+                    "Do you want to cancel this booking?",
+                    [
+                      { text: "No" },
+                      {
+                        text: "Yes, Cancel",
+                        style: 'destructive',
+                        onPress: handleCancelBooking,
                       },
-                    },
-                  ]
-                );
-              }}
-            >
-              <Text style={styles.cancelText}>Cancel Booking</Text>
-            </TouchableOpacity>
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.cancelText}>{isProcessing ? 'Wait...' : 'Cancel Booking'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.goHomeBtn, { flex: 1, marginTop: 0, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border }]}
+                disabled={isProcessing}
+                onPress={() => setShowReschedulePicker(true)}
+              >
+                <Text style={[styles.goHomeText, { color: COLORS.textPrimary }]}>Reschedule</Text>
+              </TouchableOpacity>
+            </>
           ) : null}
         </View>
       </View>
+
+      {showReschedulePicker && (
+        <DateTimePicker
+          value={rescheduleDate}
+          mode="date"
+          display="default"
+          minimumDate={new Date()}
+          onChange={(event, selected) => {
+            setShowReschedulePicker(false);
+            if (selected) {
+              const currentDate = new Date(rescheduleDate);
+              currentDate.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+              setRescheduleDate(currentDate);
+              setTimeout(() => setShowRescheduleTimePicker(true), 500);
+            }
+          }}
+        />
+      )}
+
+      {showRescheduleTimePicker && (
+        <DateTimePicker
+          value={rescheduleDate}
+          mode="time"
+          display="default"
+          onChange={(event, selected) => {
+            setShowRescheduleTimePicker(false);
+            if (selected) {
+              const currentDate = new Date(rescheduleDate);
+              currentDate.setHours(selected.getHours(), selected.getMinutes());
+              setRescheduleDate(currentDate);
+              Alert.alert(
+                "Confirm Reschedule",
+                `Reschedule to ${currentDate.toLocaleString()}?`,
+                [
+                  { text: "Cancel" },
+                  { text: "Confirm", onPress: handleRescheduleSubmit }
+                ]
+              );
+            }
+          }}
+        />
+      )}
+
     </View>
   );
 }

@@ -8,7 +8,9 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';
 import { createWorkerBooking } from '../../api/workers';
 
@@ -16,12 +18,34 @@ export default function WorkerBookingScreen({ route, navigation }) {
   const { colors } = useTheme();
   const { workerId, workerName, category, basePrice } = route.params;
 
-  const [date, setDate] = useState('Today'); // Ideally this uses a Date Picker in a full app
-  const [time, setTime] = useState('10:00 AM');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
   const [address, setAddress] = useState('');
+  const [addressObj, setAddressObj] = useState(null);
+
   const [taskDescription, setTaskDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
+
+  const onDateChange = (event, selected) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selected) {
+      const currentDate = new Date(selectedDate);
+      currentDate.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+      setSelectedDate(currentDate);
+    }
+  };
+
+  const onTimeChange = (event, selected) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (selected) {
+      const currentDate = new Date(selectedDate);
+      currentDate.setHours(selected.getHours(), selected.getMinutes());
+      setSelectedDate(currentDate);
+    }
+  };
 
   const handleBooking = async () => {
     if (!address.trim()) {
@@ -38,9 +62,10 @@ export default function WorkerBookingScreen({ route, navigation }) {
     try {
       const payload = {
         workerId,
-        date,
-        time,
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         address,
+        location: addressObj ? { lat: addressObj.lat, lng: addressObj.lng } : null,
         taskDescription,
         paymentMethod,
       };
@@ -76,34 +101,55 @@ export default function WorkerBookingScreen({ route, navigation }) {
           <Text style={[styles.workerCategory, { color: colors.textSecondary }]}>{category}</Text>
         </View>
 
-        {/* Date & Time Selection (Mocked as text inputs / pickers for now) */}
+        {/* Date & Time Selection */}
         <Text style={[styles.label, { color: colors.textPrimary, marginTop: 20 }]}>Select Date</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, color: colors.textPrimary }]}
-          value={date}
-          onChangeText={setDate}
-          placeholder="e.g., Today, Tomorrow, 12 Oct"
-          placeholderTextColor={colors.textLight}
-        />
+        <TouchableOpacity
+          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, justifyContent: 'center' }]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={{ color: colors.textPrimary }}>{selectedDate.toLocaleDateString()}</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+            minimumDate={new Date()}
+          />
+        )}
 
         <Text style={[styles.label, { color: colors.textPrimary }]}>Select Time</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, color: colors.textPrimary }]}
-          value={time}
-          onChangeText={setTime}
-          placeholder="e.g., 10:00 AM"
-          placeholderTextColor={colors.textLight}
-        />
+        <TouchableOpacity
+          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, justifyContent: 'center' }]}
+          onPress={() => setShowTimePicker(true)}
+        >
+          <Text style={{ color: colors.textPrimary }}>{selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        </TouchableOpacity>
+        {showTimePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="time"
+            display="default"
+            onChange={onTimeChange}
+          />
+        )}
 
         {/* Address Input */}
         <Text style={[styles.label, { color: colors.textPrimary }]}>Service Address</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, color: colors.textPrimary }]}
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Enter full address"
-          placeholderTextColor={colors.textLight}
-        />
+        <TouchableOpacity
+          style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, justifyContent: 'center' }]}
+          onPress={() => navigation.navigate('PlaceSearch', {
+            onSelect: (loc) => {
+              setAddress(loc.address);
+              setAddressObj({ lat: loc.lat, lng: loc.lng });
+            }
+          })}
+        >
+          <Text style={{ color: address ? colors.textPrimary : colors.textLight }}>
+            {address || 'Select from map...'}
+          </Text>
+        </TouchableOpacity>
 
         {/* Task Description */}
         <Text style={[styles.label, { color: colors.textPrimary }]}>Task Description</Text>

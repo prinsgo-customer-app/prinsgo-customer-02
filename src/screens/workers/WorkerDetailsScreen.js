@@ -103,15 +103,42 @@ export default function WorkerDetailsScreen({ route, navigation }) {
           <Text style={[styles.pricingValue, { color: colors.textPrimary }]}>₹{worker.basePrice || worker.startingPrice || 199}</Text>
         </View>
 
-        {worker.servicesOffered && worker.servicesOffered.length > 0 && (
+        {worker.workerServiceCategories && worker.workerServiceCategories.length > 0 && (
           <View style={{ marginTop: 10 }}>
-            {worker.servicesOffered.map((srv, idx) => (
+            {worker.workerServiceCategories.map((srv, idx) => (
               <View key={idx} style={styles.serviceRow}>
                 <Text style={[styles.serviceName, { color: colors.textPrimary }]}>• {srv.name}</Text>
-                <Text style={[styles.servicePrice, { color: colors.textSecondary }]}>₹{srv.price}</Text>
               </View>
             ))}
           </View>
+        )}
+
+        {worker.packages && worker.packages.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Service Packages</Text>
+            {worker.packages.map((pkg, idx) => (
+              <View key={idx} style={[styles.packageCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.packageName, { color: colors.textPrimary }]}>{pkg.name}</Text>
+                  <Text style={[styles.packagePrice, { color: colors.primary }]}>₹{pkg.price}</Text>
+                </View>
+                {pkg.description && (
+                  <Text style={[styles.packageDesc, { color: colors.textSecondary, marginTop: 4 }]}>{pkg.description}</Text>
+                )}
+              </View>
+            ))}
+          </>
+        )}
+
+        {worker.gallery && worker.gallery.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Gallery</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+              {worker.gallery.map((img, idx) => (
+                <View key={idx} style={[styles.galleryImagePlaceholder, { backgroundColor: colors.border }]} />
+              ))}
+            </ScrollView>
+          </>
         )}
       </ScrollView>
 
@@ -229,4 +256,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   bookText: { fontWeight: '800', fontSize: 16 },
+  packageCard: { padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 10 },
+  packageName: { fontSize: 16, fontWeight: '700' },
+  packagePrice: { fontSize: 16, fontWeight: '900' },
+  packageDesc: { fontSize: 13, lineHeight: 18 },
+  galleryImagePlaceholder: { width: 120, height: 90, borderRadius: 8, marginRight: 12 },
 });
