@@ -28,6 +28,8 @@ export default function WorkersScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [sortBy, setSortBy] = useState('popular');
+
   const loadLocation = async () => {
     setLocationLoading(true);
     setLocationError(null);
@@ -38,7 +40,20 @@ export default function WorkersScreen({ navigation }) {
         return;
       }
       const loc = await Location.getCurrentPositionAsync({});
-      setCurrentLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      const currentLoc = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+      setCurrentLocation(currentLoc);
+
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: currentLoc.lat,
+        longitude: currentLoc.lng
+      });
+
+      if (address) {
+        setLocationError(`${address.city || address.subregion || address.region || ''}`);
+      } else {
+        setLocationError('Current Location unlocked');
+      }
+
     } catch (err) {
       setLocationError('Error fetching location');
     } finally {
@@ -51,7 +66,7 @@ export default function WorkersScreen({ navigation }) {
     try {
       const [catRes, workerRes] = await Promise.all([
         getWorkersCategories().catch(() => ({ data: { categories: [] } })),
-        getWorkers({ categoryId: selectedCategory, search: searchQuery }).catch(() => ({ data: { workers: [] } })),
+        getWorkers({ categoryId: selectedCategory, search: searchQuery, sort: sortBy }).catch(() => ({ data: { workers: [] } })),
       ]);
       setCategories(catRes.data?.categories || []);
       setWorkers(workerRes.data?.workers || []);
@@ -72,10 +87,10 @@ export default function WorkersScreen({ navigation }) {
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, sortBy]);
 
   const handleSearchSubmit = () => {
-    // Handled by debounce
+    // Search is handled via the debouncer on text change automatically
   };
 
   return (
@@ -92,9 +107,12 @@ export default function WorkersScreen({ navigation }) {
         {/* Location Display */}
         <View style={styles.locationContainer}>
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
-            📍 {locationLoading ? 'Getting location...' : locationError ? locationError : 'Current Location unlocked'}
+            📍 {locationLoading ? 'Getting location...' : currentLocation ? (locationError === 'Permission denied' || locationError === 'Error fetching location' ? locationError : locationError || 'Current Location unlocked') : locationError || 'Getting location...'}
           </Text>
-          <TouchableOpacity onPress={loadLocation}>
+          <TouchableOpacity onPress={() => navigation.navigate('PlaceSearch', { onSelect: (loc) => {
+            setCurrentLocation({ lat: loc.lat, lng: loc.lng });
+            setLocationError(loc.address || 'Selected Location');
+          }})}>
             <Text style={[styles.changeText, { color: colors.primary }]}>CHANGE</Text>
           </TouchableOpacity>
         </View>
@@ -113,8 +131,19 @@ export default function WorkersScreen({ navigation }) {
           />
         </View>
 
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>Popular Services</Text>
+          <TouchableOpacity onPress={() => {
+            const nextSort = sortBy === 'popular' ? 'rating' : sortBy === 'rating' ? 'price' : 'popular';
+            setSortBy(nextSort);
+          }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+              Sort: {sortBy === 'popular' ? 'Top Rated' : sortBy === 'rating' ? 'Highest Rating' : 'Lowest Price'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Popular Services / Categories */}
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Popular Services</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
           <TouchableOpacity
             style={[

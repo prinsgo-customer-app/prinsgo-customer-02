@@ -11,3 +11,9 @@ export const createWorkerBooking = (payload) => apiClient.post('/workers/book', 
 export const getWorkerBookingById = (id) => apiClient.get(`/workers/bookings/${id}`);
 
 export const getWorkerHistory = (page = 1, limit = 30) => apiClient.get('/workers/bookings/history', { params: { page, limit } });
+
+export const cancelWorkerBooking = (id, reason) => apiClient.put(`/workers/bookings/${id}/cancel`, { reason });
+
+export const rescheduleWorkerBooking = (id, payload) => apiClient.put(`/workers/bookings/${id}/reschedule`, payload);
+
+export const rateWorkerBooking = (id, rating, review) => apiClient.post(`/workers/bookings/${id}/rate`, { rating, review });
