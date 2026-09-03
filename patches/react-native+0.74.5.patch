@@ -1,0 +1,10 @@
+diff --git a/node_modules/react-native/src/private/core/setUpDOM.js b/node_modules/react-native/src/private/core/setUpDOM.js
+index 0a75bd8..e708983 100644
+--- a/node_modules/react-native/src/private/core/setUpDOM.js
++++ b/node_modules/react-native/src/private/core/setUpDOM.js
+@@ -15,4 +15,4 @@ import DOMRectReadOnly from '../webapis/dom/geometry/DOMRectReadOnly';
+ global.DOMRect = DOMRect;
+
+ // $FlowExpectedError[cannot-write] The global isn't writable anywhere but here, where we define it
+-global.DOMRectReadOnly = DOMRectReadOnly;
++global.DOMRectReadOnly = typeof DOMRectReadOnly !== 'undefined' ? DOMRectReadOnly : global.DOMRectReadOnly;
