@@ -63,13 +63,23 @@ export default function WorkersScreen({ navigation }) {
 
   const loadData = async () => {
     setLoading(true);
+    setWorkers([]); // Clear stale data instantly before the request fires
     try {
       const [catRes, workerRes] = await Promise.all([
         getWorkersCategories().catch(() => ({ data: { categories: [] } })),
         getWorkers({ categoryId: selectedCategory, search: searchQuery, sort: sortBy }).catch(() => ({ data: { workers: [] } })),
       ]);
       setCategories(catRes.data?.categories || []);
-      setWorkers(workerRes.data?.workers || []);
+
+      // Strict client-side validation: Forcefully drop workers that the backend erroneously returned for the wrong category.
+      const rawWorkers = workerRes.data?.workers || [];
+      const strictlyFilteredWorkers = selectedCategory
+        ? rawWorkers.filter(w =>
+            w.workerServiceCategories?.some(cat => cat._id === selectedCategory)
+          )
+        : rawWorkers;
+
+      setWorkers(strictlyFilteredWorkers);
     } catch (err) {
       Alert.alert('Error', 'Failed to load workers data.');
     } finally {
