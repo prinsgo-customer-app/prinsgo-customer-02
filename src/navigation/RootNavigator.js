@@ -35,14 +35,6 @@ import SafetyScreen from '../screens/SafetyScreen';
 import HelpScreen from '../screens/HelpScreen';
 import RentalsScreen from '../screens/RentalsScreen';
 
-// Workers Screens
-import WorkersScreen from '../screens/workers/WorkersScreen';
-import WorkerListScreen from '../screens/workers/WorkerListScreen';
-import WorkerDetailsScreen from '../screens/workers/WorkerDetailsScreen';
-import WorkerBookingScreen from '../screens/workers/WorkerBookingScreen';
-import LiveWorkerScreen from '../screens/workers/LiveWorkerScreen';
-import WorkerReviewScreen from '../screens/workers/WorkerReviewScreen';
-
 import BottomNav from '../components/BottomNav';
 
 const Stack = createNativeStackNavigator();
@@ -120,12 +112,6 @@ function MainStack() {
       <Stack.Screen name="Safety" component={SafetyScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="Rentals" component={RentalsScreen} />
-      <Stack.Screen name="Workers" component={WorkersScreen} />
-      <Stack.Screen name="WorkerList" component={WorkerListScreen} />
-      <Stack.Screen name="WorkerDetails" component={WorkerDetailsScreen} />
-      <Stack.Screen name="WorkerBooking" component={WorkerBookingScreen} />
-      <Stack.Screen name="LiveWorker" component={LiveWorkerScreen} />
-      <Stack.Screen name="WorkerReview" component={WorkerReviewScreen} />
     </Stack.Navigator>
   );
 }

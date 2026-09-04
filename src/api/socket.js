@@ -23,11 +23,3 @@ export const onDriverLocation = (callback) => {
   return () => { getSocket().off('driver_location', callback); };
 };
 
-export const joinWorkerRoom = (workerJobId) => {
-  getSocket().emit('join_worker_room', workerJobId);
-};
-
-export const onWorkerStatusUpdate = (callback) => {
-  getSocket().on('worker_status', callback);
-  return () => { getSocket().off('worker_status', callback); };
-};

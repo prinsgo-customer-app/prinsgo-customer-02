@@ -12,13 +12,11 @@ import {
 } from 'react-native';
 import { getRideHistory } from '../api/rides';
 import { getParcelHistory } from '../api/parcels';
-import { getWorkerHistory } from '../api/workers';
-import { generateRideInvoice, generateParcelInvoice, generateWorkerInvoice } from '../utils/invoice';
+import { generateRideInvoice, generateParcelInvoice } from '../utils/invoice';
 import BottomNav from '../components/BottomNav';
 import { COLORS } from '../utils/theme';
 import { formatId } from '../utils/idGenerator';
 import AnimatedCard from '../components/AnimatedCard';
-import { joinWorkerRoom, onWorkerStatusUpdate } from '../api/socket';
 
 const STATUS_COLORS = {
   completed: COLORS.green,
@@ -38,16 +36,11 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
     <AnimatedCard
       delay={index * 50}
       style={styles.card}
-      onPress={() => {
-        if (tab === 'workers') {
-          navigation.navigate('LiveWorker', { bookingId: item._id });
-        }
-      }}
     >
       <View style={styles.cardTop}>
         <View style={styles.badgeContainer}>
           <Text style={styles.badgeText}>
-            {tab === 'rides' ? '🚗 RIDE' : tab === 'workers' ? '🛠️ WORKER' : '📦 PARCEL'}
+            {tab === 'rides' ? '🚗 RIDE' : '📦 PARCEL'}
           </Text>
         </View>
         <View style={[
@@ -64,7 +57,7 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
         <Text style={styles.date}>
           {new Date(item.createdAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
-        <Text style={styles.idText}>ID: {tab === 'rides' ? formatId('RID', item._id) : tab === 'workers' ? formatId('WRK', item._id) : formatId('PRC', item._id)}</Text>
+        <Text style={styles.idText}>ID: {tab === 'rides' ? formatId('RID', item._id) : formatId('PRC', item._id)}</Text>
 
         <View style={styles.routeContainer}>
           {tab === 'rides' ? (
@@ -79,19 +72,6 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
                 <Text style={styles.address} numberOfLines={1}>{item.drop?.address}</Text>
               </View>
             </>
-          ) : tab === 'workers' ? (
-            <View style={{ gap: 4 }}>
-              <View style={styles.routePoint}>
-                <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
-                <Text style={styles.address} numberOfLines={2}>Task: {item.taskDescription}</Text>
-              </View>
-              {item.packageName && (
-                <View style={[styles.routePoint, { marginTop: 4 }]}>
-                   <View style={[styles.dot, { backgroundColor: COLORS.orange }]} />
-                   <Text style={[styles.address, { fontSize: 12, color: COLORS.orange }]} numberOfLines={1}>Package: {item.packageName}</Text>
-                </View>
-              )}
-            </View>
           ) : (
             <View style={styles.routePoint}>
               <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
@@ -101,36 +81,25 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
         </View>
 
         <View style={styles.fareContainer}>
-          <Text style={styles.fareLabel}>{tab === 'workers' ? (item.status === 'completed' ? 'Final Price' : 'Estimated Price') : 'Total Fare'}</Text>
+          <Text style={styles.fareLabel}>Total Fare</Text>
           <Text style={styles.fare}>
-            ₹{Math.round(tab === 'rides' ? (item.fare?.totalFare || 0) : tab === 'workers' ? (item.price || item.estimatedPrice || 0) : (item.charges?.totalCharge || 0))}
+            ₹{Math.round(tab === 'rides' ? (item.fare?.totalFare || 0) : (item.charges?.totalCharge || 0))}
           </Text>
         </View>
       </View>
 
       {isCompleted && (
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-          <TouchableOpacity
-            style={[styles.invoiceButton, { flex: 1, marginTop: 0 }]}
-            onPress={() => downloadInvoice(item)}
-            disabled={downloadingId === item._id}
-          >
-            {downloadingId === item._id ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <Text style={styles.invoiceButtonText}>Download Invoice</Text>
-            )}
-          </TouchableOpacity>
-
-          {tab === 'workers' && (
-             <TouchableOpacity
-             style={[styles.invoiceButton, { flex: 1, marginTop: 0, backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
-             onPress={() => navigation.navigate('WorkerReview', { bookingId: item._id })}
-           >
-             <Text style={[styles.invoiceButtonText, { color: COLORS.textPrimary }]}>Rate & Review</Text>
-           </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.invoiceButton}
+          onPress={() => downloadInvoice(item)}
+          disabled={downloadingId === item._id}
+        >
+          {downloadingId === item._id ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Text style={styles.invoiceButtonText}>Download Invoice</Text>
           )}
-        </View>
+        </TouchableOpacity>
       )}
     </AnimatedCard>
   );
@@ -148,9 +117,6 @@ export default function HistoryScreen({ route, navigation }) {
       if (mode === 'rides') {
         const res = await getRideHistory(1, 30);
         setItems(res.data.rides || []);
-      } else if (mode === 'workers') {
-        const res = await getWorkerHistory(1, 30);
-        setItems(res.data.workers || []);
       } else {
         const res = await getParcelHistory(1, 30);
         setItems(res.data.parcels || []);
@@ -168,33 +134,6 @@ export default function HistoryScreen({ route, navigation }) {
     load(tab);
   }, [tab, load]);
 
-  useEffect(() => {
-    if (tab !== 'workers') return;
-
-    const unsubscribe = onWorkerStatusUpdate((update) => {
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item._id === update.workerId || item._id === update.bookingId ? { ...item, status: update.status } : item
-        )
-      );
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [tab]);
-
-  useEffect(() => {
-    if (tab !== 'workers' || items.length === 0) return;
-
-    // Join rooms for all active worker bookings to get real-time updates
-    items.forEach(item => {
-      if (item.status !== 'completed' && item.status !== 'cancelled') {
-        joinWorkerRoom(item._id);
-      }
-    });
-  }, [items.length, tab]);
-
   const onRefresh = () => {
     setRefreshing(true);
     load(tab);
@@ -205,8 +144,6 @@ export default function HistoryScreen({ route, navigation }) {
     try {
       if (tab === 'rides') {
         await generateRideInvoice(item);
-      } else if (tab === 'workers') {
-        await generateWorkerInvoice(item);
       } else {
         await generateParcelInvoice(item);
       }
@@ -238,13 +175,6 @@ export default function HistoryScreen({ route, navigation }) {
         >
           <Text style={[styles.segmentText, tab === 'parcels' && styles.segmentTextActive]}>Parcels</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.segmentTab, tab === 'workers' && styles.segmentTabActive]}
-          onPress={() => setTab('workers')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.segmentText, tab === 'workers' && styles.segmentTextActive]}>Workers</Text>
-        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -259,8 +189,8 @@ export default function HistoryScreen({ route, navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>{tab === 'rides' ? '🚖' : tab === 'workers' ? '🛠️' : '📦'}</Text>
-              <Text style={styles.emptyTitle}>No {tab === 'rides' ? 'rides' : tab === 'workers' ? 'workers' : 'parcels'} yet</Text>
+              <Text style={styles.emptyIcon}>{tab === 'rides' ? '🚖' : '📦'}</Text>
+              <Text style={styles.emptyTitle}>No {tab === 'rides' ? 'rides' : 'parcels'} yet</Text>
               <Text style={styles.emptyText}>
                 Your past and upcoming bookings will appear here.
               </Text>
