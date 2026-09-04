@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { getWorkerById } from '../../api/workers';
@@ -98,10 +99,12 @@ export default function WorkerDetailsScreen({ route, navigation }) {
 
         {/* Services & Pricing */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Services & Pricing</Text>
-        <View style={[styles.pricingBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>Starting Price (Inspection/Visit)</Text>
-          <Text style={[styles.pricingValue, { color: colors.textPrimary }]}>₹{worker.basePrice || worker.startingPrice || 199}</Text>
-        </View>
+        {worker.basePrice || worker.startingPrice ? (
+          <View style={[styles.pricingBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>Starting Price (Inspection/Visit)</Text>
+            <Text style={[styles.pricingValue, { color: colors.textPrimary }]}>₹{worker.basePrice || worker.startingPrice}</Text>
+          </View>
+        ) : null}
 
         {worker.workerServiceCategories && worker.workerServiceCategories.length > 0 && (
           <View style={{ marginTop: 10 }}>
@@ -130,12 +133,21 @@ export default function WorkerDetailsScreen({ route, navigation }) {
           </>
         )}
 
-        {worker.gallery && worker.gallery.length > 0 && (
+        {(worker.gallery && worker.gallery.length > 0 || gallery.length > 0) && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Gallery</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-              {worker.gallery.map((img, idx) => (
-                <View key={idx} style={[styles.galleryImagePlaceholder, { backgroundColor: colors.border }]} />
+              {(gallery.length > 0 ? gallery : worker.gallery).map((img, idx) => (
+                img?.url || typeof img === 'string' ? (
+                  <Image
+                    key={idx}
+                    source={{ uri: img.url || img }}
+                    style={styles.galleryImagePlaceholder}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View key={idx} style={[styles.galleryImagePlaceholder, { backgroundColor: colors.border }]} />
+                )
               ))}
             </ScrollView>
           </>
