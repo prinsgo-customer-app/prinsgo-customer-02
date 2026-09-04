@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,16 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Image,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
-import { createWorkerBooking } from '../../api/workers';
+import { createWorkerBooking, getWorkerPackages, uploadWorkerBookingPhoto } from '../../api/workers';
 
 export default function WorkerBookingScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { workerId, workerName, category, basePrice } = route.params;
+  const { workerId, workerName, category, basePrice, initialPackageId } = route.params;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -24,10 +26,45 @@ export default function WorkerBookingScreen({ route, navigation }) {
 
   const [address, setAddress] = useState('');
   const [addressObj, setAddressObj] = useState(null);
-
   const [taskDescription, setTaskDescription] = useState('');
+
+  // Dynamic Pricing & Packages
+  const [packages, setPackages] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [photoUri, setPhotoUri] = useState(null);
+
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadPackages = async () => {
+      try {
+        const res = await getWorkerPackages(workerId);
+        const pkgs = res?.data?.packages || [];
+        setPackages(pkgs);
+        if (initialPackageId) {
+          const found = pkgs.find(p => p._id === initialPackageId);
+          if (found) setSelectedPackage(found);
+        }
+      } catch (e) {
+        console.log('Failed to fetch packages');
+      }
+    };
+    loadPackages();
+  }, [workerId, initialPackageId]);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
 
   const onDateChange = (event, selected) => {
     setShowDatePicker(Platform.OS === 'ios');
@@ -67,11 +104,29 @@ export default function WorkerBookingScreen({ route, navigation }) {
         address,
         location: addressObj ? { lat: addressObj.lat, lng: addressObj.lng } : null,
         taskDescription,
+        packageId: selectedPackage ? selectedPackage._id : null,
+        packageName: selectedPackage ? selectedPackage.name : null,
+        price: selectedPackage ? selectedPackage.price : (basePrice || 0),
+        tipAmount,
         paymentMethod,
       };
       const res = await createWorkerBooking(payload);
       const bookingId = res?.data?.booking?._id || res?.data?.job?._id || res?.data?.workerBooking?._id || res?.data?.data?._id || res?.data?._id;
       if (bookingId) {
+        // Handle Photo Upload if present
+        if (photoUri) {
+          try {
+            const formData = new FormData();
+            formData.append('photo', {
+              uri: photoUri,
+              name: 'service_photo.jpg',
+              type: 'image/jpeg'
+            });
+            await uploadWorkerBookingPhoto(bookingId, formData);
+          } catch (e) {
+            console.log('Failed to upload optional photo');
+          }
+        }
         navigation.replace('LiveWorker', { bookingId });
       } else {
         Alert.alert('Success', 'Your booking request has been sent to the worker!', [
@@ -140,6 +195,8 @@ export default function WorkerBookingScreen({ route, navigation }) {
         <TouchableOpacity
           style={[styles.input, { backgroundColor: colors.cardBg, borderColor: colors.border, justifyContent: 'center' }]}
           onPress={() => navigation.navigate('PlaceSearch', {
+            mode: 'workers',
+            currentLocation: addressObj,
             onSelect: (loc) => {
               setAddress(loc.address);
               setAddressObj({ lat: loc.lat, lng: loc.lng });
@@ -150,6 +207,28 @@ export default function WorkerBookingScreen({ route, navigation }) {
             {address || 'Select from map...'}
           </Text>
         </TouchableOpacity>
+
+        {/* Packages Selection (If Available) */}
+        {packages.length > 0 && (
+          <>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Select a Package (Optional)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {packages.map(pkg => (
+                <TouchableOpacity
+                  key={pkg._id}
+                  style={[
+                    styles.packageCardSelection,
+                    selectedPackage?._id === pkg._id ? { borderColor: colors.primary, backgroundColor: colors.primary + '10' } : { borderColor: colors.border, backgroundColor: colors.cardBg }
+                  ]}
+                  onPress={() => setSelectedPackage(selectedPackage?._id === pkg._id ? null : pkg)}
+                >
+                  <Text style={[styles.packageCardTitle, { color: colors.textPrimary }]}>{pkg.name}</Text>
+                  <Text style={[styles.packageCardPrice, { color: colors.primary }]}>₹{pkg.price}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         {/* Task Description */}
         <Text style={[styles.label, { color: colors.textPrimary }]}>Task Description</Text>
@@ -164,15 +243,38 @@ export default function WorkerBookingScreen({ route, navigation }) {
           textAlignVertical="top"
         />
 
+        {/* Optional Photo Upload */}
+        <TouchableOpacity style={[styles.photoUploadBtn, { borderColor: colors.border, backgroundColor: colors.cardBg }]} onPress={pickImage}>
+          <Text style={{ fontSize: 18, marginRight: 8 }}>📷</Text>
+          <Text style={{ color: colors.textSecondary, flex: 1 }}>{photoUri ? 'Photo Attached' : 'Attach a photo of the issue (Optional)'}</Text>
+          {photoUri && <Image source={{ uri: photoUri }} style={{ width: 30, height: 30, borderRadius: 6 }} />}
+        </TouchableOpacity>
+
         {/* Price Estimate */}
         <View style={[styles.priceBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Estimated Starting Price</Text>
-          <Text style={[styles.priceValue, { color: colors.textPrimary }]}>₹{basePrice || 199}</Text>
+          <Text style={[styles.priceValue, { color: colors.textPrimary }]}>₹{selectedPackage ? selectedPackage.price : (basePrice || 0)}</Text>
         </View>
 
         <Text style={{ fontSize: 12, color: colors.textLight, textAlign: 'center', marginTop: 10, marginBottom: 20 }}>
           Final price will be decided after inspection by the professional.
         </Text>
+
+        {/* Tip Professional */}
+        <Text style={[styles.label, { color: colors.textPrimary }]}>Tip the Professional (Optional)</Text>
+        <View style={styles.paymentSelectorRow}>
+          {[0, 20, 50, 100].map((tip) => (
+            <TouchableOpacity
+              key={tip}
+              style={[styles.paymentBtn, tipAmount === tip && { borderColor: colors.primary, backgroundColor: colors.cardBg }]}
+              onPress={() => setTipAmount(tip)}
+            >
+              <Text style={[styles.paymentText, { color: colors.textPrimary }]}>
+                {tip === 0 ? 'No Tip' : `₹${tip}`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={[styles.label, { color: colors.textPrimary, marginBottom: 12 }]}>Payment Method</Text>
         <View style={styles.paymentSelectorRow}>
@@ -281,4 +383,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   confirmText: { fontSize: 16, fontWeight: '800' },
+  packageCardSelection: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginRight: 12,
+    minWidth: 120,
+  },
+  packageCardTitle: { fontSize: 14, fontWeight: '700' },
+  packageCardPrice: { fontSize: 14, fontWeight: '900', marginTop: 4 },
+  photoUploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 14,
+  },
 });

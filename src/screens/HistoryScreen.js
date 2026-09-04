@@ -80,9 +80,17 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
               </View>
             </>
           ) : tab === 'workers' ? (
-            <View style={styles.routePoint}>
-              <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
-              <Text style={styles.address} numberOfLines={2}>Task: {item.taskDescription}</Text>
+            <View style={{ gap: 4 }}>
+              <View style={styles.routePoint}>
+                <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
+                <Text style={styles.address} numberOfLines={2}>Task: {item.taskDescription}</Text>
+              </View>
+              {item.packageName && (
+                <View style={[styles.routePoint, { marginTop: 4 }]}>
+                   <View style={[styles.dot, { backgroundColor: COLORS.orange }]} />
+                   <Text style={[styles.address, { fontSize: 12, color: COLORS.orange }]} numberOfLines={1}>Package: {item.packageName}</Text>
+                </View>
+              )}
             </View>
           ) : (
             <View style={styles.routePoint}>
@@ -93,7 +101,7 @@ const BookingCard = ({ item, tab, index, downloadInvoice, downloadingId, navigat
         </View>
 
         <View style={styles.fareContainer}>
-          <Text style={styles.fareLabel}>{tab === 'workers' ? 'Estimated Price' : 'Total Fare'}</Text>
+          <Text style={styles.fareLabel}>{tab === 'workers' ? (item.status === 'completed' ? 'Final Price' : 'Estimated Price') : 'Total Fare'}</Text>
           <Text style={styles.fare}>
             ₹{Math.round(tab === 'rides' ? (item.fare?.totalFare || 0) : tab === 'workers' ? (item.price || item.estimatedPrice || 0) : (item.charges?.totalCharge || 0))}
           </Text>
