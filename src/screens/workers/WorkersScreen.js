@@ -109,7 +109,7 @@ export default function WorkersScreen({ navigation }) {
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             📍 {locationLoading ? 'Getting location...' : currentLocation ? (locationError === 'Permission denied' || locationError === 'Error fetching location' ? locationError : locationError || 'Current Location unlocked') : locationError || 'Getting location...'}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('PlaceSearch', { onSelect: (loc) => {
+          <TouchableOpacity onPress={() => navigation.navigate('PlaceSearch', { mode: 'workers', currentLocation, onSelect: (loc) => {
             setCurrentLocation({ lat: loc.lat, lng: loc.lng });
             setLocationError(loc.address || 'Selected Location');
           }})}>
@@ -118,18 +118,15 @@ export default function WorkersScreen({ navigation }) {
         </View>
 
         {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.searchContainer, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+          onPress={() => navigation.navigate('WorkerList', { searchQuery: '' })}
+        >
           <Text style={{ fontSize: 16 }}>🔍</Text>
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search for a service or worker..."
-            placeholderTextColor={colors.textLight}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-          />
-        </View>
+          <Text style={[styles.searchInput, { color: colors.textLight, marginTop: 2 }]}>
+            Search for a service or professional...
+          </Text>
+        </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>Popular Services</Text>
@@ -150,7 +147,10 @@ export default function WorkersScreen({ navigation }) {
               styles.categoryBtn,
               { backgroundColor: selectedCategory === '' ? colors.primary : colors.cardBg, borderColor: colors.border }
             ]}
-            onPress={() => setSelectedCategory('')}
+            onPress={() => {
+              setSelectedCategory('');
+              navigation.navigate('WorkerList', { categoryId: '' });
+            }}
           >
             <Text style={{ color: selectedCategory === '' ? '#fff' : colors.textPrimary, fontWeight: '700' }}>All</Text>
           </TouchableOpacity>
@@ -161,7 +161,10 @@ export default function WorkersScreen({ navigation }) {
                 styles.categoryBtn,
                 { backgroundColor: selectedCategory === cat._id ? colors.primary : colors.cardBg, borderColor: colors.border }
               ]}
-              onPress={() => setSelectedCategory(cat._id)}
+              onPress={() => {
+                setSelectedCategory(cat._id);
+                navigation.navigate('WorkerList', { categoryId: cat._id });
+              }}
             >
               <Text style={{ color: selectedCategory === cat._id ? '#fff' : colors.textPrimary, fontWeight: '700' }}>
                 {cat.name}

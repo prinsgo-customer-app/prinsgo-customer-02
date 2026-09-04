@@ -186,7 +186,7 @@ export default function LiveWorkerScreen({ route, navigation }) {
               Category: {booking.category || 'Service'}
             </Text>
             <Text style={styles.driverInfo}>
-              Rating: ⭐ {booking.worker?.rating ? Number(booking.worker.rating).toFixed(1) : "5.0"}
+              Rating: ⭐ {booking.worker?.rating ? Number(booking.worker.rating).toFixed(1) : "New"}
             </Text>
           </View>
         ) : booking?.status === 'requested' || booking?.status === 'pending' ? (

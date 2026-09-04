@@ -16,4 +16,25 @@ export const cancelWorkerBooking = (id, reason) => apiClient.put(`/workers/booki
 
 export const rescheduleWorkerBooking = (id, payload) => apiClient.put(`/workers/bookings/${id}/reschedule`, payload);
 
-export const rateWorkerBooking = (id, rating, review) => apiClient.post(`/workers/bookings/${id}/rate`, { rating, review });
+export const rateWorkerBooking = (id, rating, review, tip) => apiClient.post(`/workers/bookings/${id}/rate`, { rating, review, tip });
+
+// Extended API endpoints for robust real backend integration
+
+// Fetch Worker Packages
+export const getWorkerPackages = (id) => apiClient.get(`/workers/${id}/packages`);
+
+// Fetch Worker Gallery
+export const getWorkerGallery = (id) => apiClient.get(`/workers/${id}/gallery`);
+
+// Upload photo for service requirements
+export const uploadWorkerBookingPhoto = (id, formData) => apiClient.post(`/workers/bookings/${id}/upload`, formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+});
+
+// Tip professional
+export const tipWorker = (bookingId, amount) => apiClient.post(`/workers/bookings/${bookingId}/tip`, { amount });
+
+// Update booking status
+export const updateWorkerBookingStatus = (id, status) => apiClient.put(`/workers/bookings/${id}/status`, { status });
