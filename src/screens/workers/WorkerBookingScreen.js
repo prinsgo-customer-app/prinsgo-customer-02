@@ -38,6 +38,15 @@ export default function WorkerBookingScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (route.params?.selectedLocation) {
+      const loc = route.params.selectedLocation;
+      setAddress(loc.address);
+      setAddressObj({ lat: loc.lat, lng: loc.lng });
+      navigation.setParams({ selectedLocation: undefined });
+    }
+  }, [route.params?.selectedLocation, navigation]);
+
+  useEffect(() => {
     const loadPackages = async () => {
       try {
         const res = await getWorkerPackages(workerId);
@@ -197,10 +206,7 @@ export default function WorkerBookingScreen({ route, navigation }) {
           onPress={() => navigation.navigate('PlaceSearch', {
             mode: 'workers',
             currentLocation: addressObj,
-            onSelect: (loc) => {
-              setAddress(loc.address);
-              setAddressObj({ lat: loc.lat, lng: loc.lng });
-            }
+            previousScreen: 'WorkerBooking'
           })}
         >
           <Text style={{ color: address ? colors.textPrimary : colors.textLight }}>
