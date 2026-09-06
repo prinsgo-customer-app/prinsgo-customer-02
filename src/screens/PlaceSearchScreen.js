@@ -66,11 +66,18 @@ export default function PlaceSearchScreen({ route, navigation }) {
     try {
       const res = await placeDetails(item.placeId || item.place_id);
       const drop = {
-        address: res.data?.address || item.description,
-        lat: res.data?.lat,
-        lng: res.data?.lng,
+        address: res.data?.address || item.description || item.address,
+        lat: res.data?.lat ?? item.lat ?? item.latitude,
+        lng: res.data?.lng ?? item.lng ?? item.longitude,
       };
-      if (mode === 'ride') {
+
+      if (mode === 'workers') {
+        navigation.navigate({
+          name: route.params.previousScreen || (navigation.getState().routes[navigation.getState().routes.length - 2]?.name),
+          params: { selectedLocation: drop },
+          merge: true,
+        });
+      } else if (mode === 'ride') {
         navigation.replace('VehicleSelect', { pickup: currentLocation, drop });
       } else {
         navigation.replace('ParcelDetails', { pickup: currentLocation, drop });
