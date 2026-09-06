@@ -133,11 +133,11 @@ export default function WorkerDetailsScreen({ route, navigation }) {
           </>
         )}
 
-        {(worker.gallery && worker.gallery.length > 0 || gallery.length > 0) && (
+        {worker.gallery && worker.gallery.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Gallery</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-              {(gallery.length > 0 ? gallery : worker.gallery).map((img, idx) => (
+              {worker.gallery.map((img, idx) => (
                 img?.url || typeof img === 'string' ? (
                   <Image
                     key={idx}
