@@ -6,7 +6,7 @@ export const getWorkers = (params) => apiClient.get('/workers', { params });
 
 export const getWorkerById = (id) => apiClient.get(`/workers/${id}`);
 
-export const createWorkerBooking = (payload) => apiClient.post('/workers/book', payload);
+export const createWorkerBooking = (payload) => apiClient.post('/workers/bookings', payload);
 
 export const getWorkerBookingById = (id) => apiClient.get(`/workers/bookings/${id}`);
 

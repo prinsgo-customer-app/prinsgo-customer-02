@@ -18,7 +18,7 @@ import { createWorkerBooking, getWorkerPackages, uploadWorkerBookingPhoto } from
 
 export default function WorkerBookingScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const { workerId, workerName, category, basePrice, initialPackageId } = route.params;
+  const { workerId, workerName, categoryId, category, basePrice, initialPackageId } = route.params;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -36,6 +36,15 @@ export default function WorkerBookingScreen({ route, navigation }) {
 
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (route.params?.selectedLocation) {
+      const loc = route.params.selectedLocation;
+      setAddress(loc.address);
+      setAddressObj({ lat: loc.lat, lng: loc.lng });
+      navigation.setParams({ selectedLocation: undefined });
+    }
+  }, [route.params?.selectedLocation, navigation]);
 
   useEffect(() => {
     const loadPackages = async () => {
@@ -99,15 +108,17 @@ export default function WorkerBookingScreen({ route, navigation }) {
     try {
       const payload = {
         workerId,
+        categoryId: categoryId || null,
         date: selectedDate.toISOString().split('T')[0],
         time: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        address,
-        location: addressObj ? { lat: addressObj.lat, lng: addressObj.lng } : null,
+        serviceAddress: address,
+        latitude: addressObj?.lat || null,
+        longitude: addressObj?.lng || null,
         taskDescription,
         packageId: selectedPackage ? selectedPackage._id : null,
         packageName: selectedPackage ? selectedPackage.name : null,
-        price: selectedPackage ? selectedPackage.price : (basePrice || 0),
-        tipAmount,
+        estimatedPrice: selectedPackage ? selectedPackage.price : (basePrice || 0),
+        tip: tipAmount,
         paymentMethod,
       };
       const res = await createWorkerBooking(payload);
@@ -197,10 +208,7 @@ export default function WorkerBookingScreen({ route, navigation }) {
           onPress={() => navigation.navigate('PlaceSearch', {
             mode: 'workers',
             currentLocation: addressObj,
-            onSelect: (loc) => {
-              setAddress(loc.address);
-              setAddressObj({ lat: loc.lat, lng: loc.lng });
-            }
+            previousScreen: 'WorkerBooking'
           })}
         >
           <Text style={{ color: address ? colors.textPrimary : colors.textLight }}>
