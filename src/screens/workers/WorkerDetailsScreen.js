@@ -133,11 +133,11 @@ export default function WorkerDetailsScreen({ route, navigation }) {
           </>
         )}
 
-        {(worker.gallery && worker.gallery.length > 0 || gallery.length > 0) && (
+        {worker.gallery && worker.gallery.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 20 }]}>Gallery</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-              {(gallery.length > 0 ? gallery : worker.gallery).map((img, idx) => (
+              {worker.gallery.map((img, idx) => (
                 img?.url || typeof img === 'string' ? (
                   <Image
                     key={idx}
@@ -163,7 +163,13 @@ export default function WorkerDetailsScreen({ route, navigation }) {
 
         <TouchableOpacity
           style={[styles.bookBtn, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('WorkerBooking', { workerId: worker._id, workerName: worker.name, category: worker.category || worker.workerServiceCategories?.[0]?.name, basePrice: worker.basePrice || worker.startingPrice })}
+          onPress={() => navigation.navigate('WorkerBooking', {
+            workerId: worker._id,
+            workerName: worker.name,
+            categoryId: worker.categoryId || worker.workerServiceCategories?.[0]?._id,
+            category: worker.category || worker.workerServiceCategories?.[0]?.name,
+            basePrice: worker.basePrice || worker.startingPrice
+          })}
         >
           <Text style={[styles.bookText, { color: colors.textPrimary }]}>Book Now</Text>
         </TouchableOpacity>

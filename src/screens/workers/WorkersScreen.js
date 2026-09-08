@@ -15,7 +15,7 @@ import { getWorkersCategories, getWorkers } from '../../api/workers';
 import AnimatedCard from '../../components/AnimatedCard';
 import BottomNav from '../../components/BottomNav';
 
-export default function WorkersScreen({ navigation }) {
+export default function WorkersScreen({ route, navigation }) {
   const { colors } = useTheme();
 
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -82,6 +82,15 @@ export default function WorkersScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
+    if (route.params?.selectedLocation) {
+      const loc = route.params.selectedLocation;
+      setCurrentLocation({ lat: loc.lat, lng: loc.lng });
+      setLocationError(loc.address || 'Selected Location');
+      navigation.setParams({ selectedLocation: undefined });
+    }
+  }, [route.params?.selectedLocation, navigation]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       loadData();
     }, 400);
@@ -109,10 +118,11 @@ export default function WorkersScreen({ navigation }) {
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             📍 {locationLoading ? 'Getting location...' : currentLocation ? (locationError === 'Permission denied' || locationError === 'Error fetching location' ? locationError : locationError || 'Current Location unlocked') : locationError || 'Getting location...'}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('PlaceSearch', { mode: 'workers', currentLocation, onSelect: (loc) => {
-            setCurrentLocation({ lat: loc.lat, lng: loc.lng });
-            setLocationError(loc.address || 'Selected Location');
-          }})}>
+          <TouchableOpacity onPress={() => navigation.navigate('PlaceSearch', {
+            mode: 'workers',
+            currentLocation,
+            previousScreen: 'Workers'
+          })}>
             <Text style={[styles.changeText, { color: colors.primary }]}>CHANGE</Text>
           </TouchableOpacity>
         </View>
