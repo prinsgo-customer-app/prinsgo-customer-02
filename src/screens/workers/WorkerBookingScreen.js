@@ -107,18 +107,22 @@ export default function WorkerBookingScreen({ route, navigation }) {
     setLoading(true);
     try {
       const payload = {
+        worker: workerId,
         workerId,
+        category: categoryId || null,
         categoryId: categoryId || null,
         date: selectedDate.toISOString().split('T')[0],
-        time: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: selectedDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
         serviceAddress: address,
+        address: address,
         latitude: addressObj?.lat || null,
         longitude: addressObj?.lng || null,
+        location: addressObj ? { lat: addressObj.lat, lng: addressObj.lng, address } : null,
         taskDescription,
         packageId: selectedPackage ? selectedPackage._id : null,
         packageName: selectedPackage ? selectedPackage.name : null,
-        estimatedPrice: selectedPackage ? selectedPackage.price : (basePrice || 0),
-        tip: tipAmount,
+        estimatedPrice: Number(selectedPackage ? selectedPackage.price : (basePrice || 0)),
+        tip: Number(tipAmount) || 0,
         paymentMethod,
       };
       const res = await createWorkerBooking(payload);
